@@ -1,7 +1,7 @@
-"""Data preprocessing utilities."""
+"""데이터 전처리 유틸리티."""
 
-# TODO: Implement preprocessing functions
+# TODO: 전처리 함수를 구현하세요
 
 def clean_data(df):
-    """Placeholder function for cleaning raw data."""
+    """원시 데이터를 정제하기 위한 자리표시자 함수."""
     pass

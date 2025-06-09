@@ -1,3 +1,3 @@
-# XAI Guide
+# XAI 가이드
 
-Explanation methods for interpretability.
+모델 해석을 위한 설명 기법.

@@ -1,7 +1,7 @@
-"""XAI explanation methods."""
+"""XAI 설명 기법."""
 
-# TODO: Implement XAI methods such as SHAP, LIME, IG, DeepLIFT
+# TODO: SHAP, LIME, IG, DeepLIFT와 같은 XAI 기법을 구현하세요
 
 def explain(model, data):
-    """Placeholder function for generating explanations."""
+    """설명 생성을 위한 자리표시자 함수."""
     pass
