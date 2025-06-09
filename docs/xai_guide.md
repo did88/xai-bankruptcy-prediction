@@ -1,3 +1,8 @@
-# XAI Guide
+# XAI 기법 가이드
 
-Explanation methods for interpretability.
+본 프로젝트에서 사용되는 주요 XAI 기법을 간략히 소개합니다.
+
+- **SHAP**: 각 특성이 예측에 기여한 정도를 수치로 표현
+- **LIME**: 주변 데이터의 선형 모델을 이용하여 예측을 설명
+- **Integrated Gradients**: 입력이 결과에 미치는 영향을 누적된 경사로 계산
+- **DeepLIFT**: 기준값 대비 변화량을 이용해 중요도를 계산

@@ -1,3 +1,9 @@
-# Architecture
+# 프로젝트 아키텍처
 
-Project structure overview.
+프로젝트의 주요 디렉터리와 그 역할은 다음과 같습니다.
+
+- `data/` : 원시 데이터(`raw/`)와 전처리 데이터(`processed/`) 저장
+- `models/` : 학습된 모델 파일 보관
+- `src/` : 전처리, 학습, 평가, 설명 모듈을 포함
+- `notebooks/` : EDA 및 모델링, XAI 분석 노트북
+- `docs/` : 문서화 자료를 저장
