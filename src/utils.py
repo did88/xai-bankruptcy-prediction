@@ -1,4 +1,4 @@
-"""Utility functions for the project."""
+"""프로젝트용 유틸리티 함수."""
 
-# TODO: Add helper functions used across modules
+# TODO: 여러 모듈에서 사용하는 보조 함수를 추가하세요
 

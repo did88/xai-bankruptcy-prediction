@@ -1,3 +1,3 @@
-# Architecture
+# 아키텍처
 
-Project structure overview.
+프로젝트 구조 개요.
