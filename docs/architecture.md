@@ -1,0 +1,3 @@
+# Architecture
+
+Project structure overview.
