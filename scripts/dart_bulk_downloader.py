@@ -13,6 +13,8 @@ import xml.etree.ElementTree as ET
 import aiohttp
 import pandas as pd
 from dotenv import load_dotenv
+import argparse
+import os
 
 # Load API key from .env at project root
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
