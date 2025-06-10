@@ -54,15 +54,32 @@ def fetch_samsung_statements(
     return pd.DataFrame(data.get("list", []))
 
 
+def fetch_samsung_statements_range(
+    api_key: str,
+    start_year: int = 2013,
+    end_year: int = 2024,
+    reprt_code: str = "11011",
+) -> pd.DataFrame:
+    """Return Samsung Electronics statements for all years in the range."""
+    frames = []
+    for year in range(start_year, end_year + 1):
+        df_year = fetch_samsung_statements(api_key, year=year, reprt_code=reprt_code)
+        df_year["bsns_year"] = year
+        frames.append(df_year)
+    if frames:
+        return pd.concat(frames, ignore_index=True)
+    return pd.DataFrame()
+
+
 if __name__ == "__main__":
     api_key = os.getenv("DART_API_KEY")
     if not api_key:
         raise EnvironmentError("Set the DART_API_KEY environment variable")
 
-    df = fetch_samsung_statements(api_key, year=2023)
+    df = fetch_samsung_statements_range(api_key, start_year=2013, end_year=2024)
     print(df.head())
 
     # 🔽 엑셀로 저장
-    output_path = Path(__file__).resolve().parent.parent / "samsung_statements_2023.xlsx"
+    output_path = Path(__file__).resolve().parent.parent / "samsung_statements_2013_2024.xlsx"
     df.to_excel(output_path, index=False, engine="openpyxl")
     print(f"✅ 엑셀 저장 완료: {output_path}")
