@@ -1,5 +1,6 @@
 import asyncio
 import os
+import time
 from pathlib import Path
 from typing import List, Tuple
 import pandas as pd
@@ -15,6 +16,11 @@ from dart_bulk_downloader import (
     DART_SINGLE_ACCOUNT_URL,
 )
 
+# 초당 약 14~15회 수준으로 제한
+def rate_limited_get(url, params, delay=0.07):
+    time.sleep(delay)
+    return requests.get(url, params=params, timeout=10)
+
 def has_report_for_any_year(api_key: str, corp_code: str, years: range) -> bool:
     for year in years:
         params = {
@@ -24,7 +30,7 @@ def has_report_for_any_year(api_key: str, corp_code: str, years: range) -> bool:
             "reprt_code": "11011",
         }
         try:
-            resp = requests.get(DART_SINGLE_ACCOUNT_URL, params=params, timeout=10)
+            resp = rate_limited_get(DART_SINGLE_ACCOUNT_URL, params)
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get("status") == "000":
@@ -41,13 +47,18 @@ def split_corps_for_teams(corp_codes: List[str], chunk_size: int = 100) -> List[
         chunks.append((team_num, chunk))
     return chunks
 
+# 비동기 병렬 요청 수 제한
 async def download_team_data(api_key: str, team_num: int, corp_codes: List[str], years: range, output_dir: Path, workers: int = 10) -> Path:
     print(f"🚀 팀 {team_num} 다운로드 시작 - {len(corp_codes)}개 기업")
     start_time = datetime.now()
-    statements = await fetch_bulk_statements(api_key, corp_codes, years, workers)
+
+    # fetch_bulk_statements 내부에서 semaphore 적용하도록 리팩터링되어야 함
+    statements = await fetch_bulk_statements(api_key, corp_codes, years, workers, max_concurrent=15)
+
     filename = f"dart_statements_team_{team_num:02d}.xlsx"
     output_path = output_dir / filename
     save_to_excel(statements, output_path)
+
     elapsed = datetime.now() - start_time
     print(f"✅ 팀 {team_num} 완료 - {elapsed.total_seconds():.1f}초 소요")
     print(f"   저장 위치: {output_path}")
@@ -55,7 +66,7 @@ async def download_team_data(api_key: str, team_num: int, corp_codes: List[str],
     return output_path
 
 def merge_team_files(team_files: List[Path], output_path: Path) -> None:
-    print("\n📊 팀별 파일 밟음 중...")
+    print("\n📊 팀별 파일 병합 중...")
     all_data = []
     for file_path in sorted(team_files):
         if file_path.exists():
@@ -65,16 +76,16 @@ def merge_team_files(team_files: List[Path], output_path: Path) -> None:
     if all_data:
         merged_df = pd.concat(all_data, ignore_index=True)
         save_to_excel(merged_df, output_path)
-        print(f"\n✅ 밟음 완료!")
+        print(f"\n✅ 병합 완료!")
         print(f"   전체 데이터: {len(merged_df):,}행")
         print(f"   저장 위치: {output_path}")
     else:
-        print("❌ 밟을 파일이 없습니다.")
+        print("❌ 병합할 파일이 없습니다.")
 
 async def main():
-    parser = argparse.ArgumentParser(description='DART 재미제표 팀별 다운로드')
+    parser = argparse.ArgumentParser(description='DART 재무제표 팀별 다운로드')
     parser.add_argument('--team', type=int, help='팀 번호 (1, 2, ...)')
-    parser.add_argument('--merge-only', action='store_true', help='밟음만 수행')
+    parser.add_argument('--merge-only', action='store_true', help='병합만 수행')
     parser.add_argument('--list-teams', action='store_true', help='팀 분할 정보 표시')
     parser.add_argument('--workers', type=int, default=10, help='동시 작업 수')
     parser.add_argument('--start-year', type=int, default=2015)
@@ -105,7 +116,7 @@ async def main():
     for i, corp_code in enumerate(target_df["corp_code"]):
         if has_report_for_any_year(api_key, corp_code, years):
             valid_corp_codes.append(corp_code)
-        if (i + 1) % 200 == 0:
+        if (i + 1) % 100 == 0:
             print(f"   진행 중: {i + 1} / {len(target_df)}")
 
     print(f"✅ 유효 기업 수: {len(valid_corp_codes)}개")
