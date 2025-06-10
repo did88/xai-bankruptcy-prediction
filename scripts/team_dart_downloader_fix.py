@@ -56,7 +56,7 @@ async def download_team_data(api_key: str, team_num: int, corp_codes: List[str],
 
     statements = await fetch_bulk_statements(api_key, corp_codes, years, workers)
 
-    if not statements:
+    if statements.empty:
         print(f"❌ 팀 {team_num}: 수집된 데이터가 없어 파일을 저장하지 않습니다.")
         return
 
