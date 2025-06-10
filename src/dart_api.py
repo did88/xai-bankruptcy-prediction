@@ -6,11 +6,16 @@ import io
 import os
 import zipfile
 from typing import Any, Dict
+from pathlib import Path
+from xml.etree import ElementTree
 
 import pandas as pd
 import requests
-from xml.etree import ElementTree
+from dotenv import load_dotenv
 
+# .env 파일 경로 설정 (src의 상위 디렉토리)
+dotenv_path = Path(__file__).resolve().parent.parent / '.env'
+load_dotenv(dotenv_path)
 
 def get_corp_code(api_key: str, corp_name: str = "삼성전자") -> str:
     """Return the DART corp_code for the given corporation name.
