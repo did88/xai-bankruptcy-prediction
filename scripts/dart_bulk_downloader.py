@@ -188,37 +188,55 @@ __all__ = [
 ]
 
 
-if __name__ == "__main__":
-    import os
+def main() -> None:
+    """Run a small test download for a subset of companies."""
+    parser = argparse.ArgumentParser(description="DART bulk download helper")
+    parser.add_argument("--sample", type=int, default=5, help="number of companies for the test run")
+    parser.add_argument("--start-year", type=int, default=2022)
+    parser.add_argument("--end-year", type=int, default=2023)
+    parser.add_argument("--workers", type=int, default=5)
+    parser.add_argument("--output", type=Path, default=Path("dart_test.xlsx"))
+    args = parser.parse_args()
 
     api_key = os.getenv("DART_API_KEY")
     if not api_key:
         raise EnvironmentError("Set the DART_API_KEY environment variable")
 
-    # Test fetching corp codes
-    print("Testing corp code fetch...")
+    print("\n📥 DART 기업 코드 목록 수집 중...")
     corp_df = asyncio.run(fetch_corp_codes(api_key))
-    print(f"\nTotal corporations: {len(corp_df):,}")
-    
-    # Apply filters
+    print(f"\n📊 총 기업 수: {len(corp_df):,}개")
+
     target_df = filter_kospi_kosdaq_non_financial(corp_df)
-    print(f"\nFiltered corporations: {len(target_df):,}")
-    
-    if len(target_df) > 0:
-        # Test with first 10 companies
-        corp_codes = target_df["corp_code"].unique()[:10]
-        years = range(2021, 2023)  # 2021-2022년 데이터 (더 안정적)
-        
-        print(f"\nTesting download for {len(corp_codes)} companies, {len(years)} years...")
-        print(f"Test companies: {list(target_df.head(10)['corp_name'])}")
-        
-        statements = asyncio.run(
-            fetch_bulk_statements(api_key, corp_codes, years, workers=5)
-        )
-        
-        if not statements.empty:
-            out_path = Path(__file__).resolve().parent.parent / "data" / "dart_test.xlsx"
-            save_to_excel(statements, out_path)
-            print(f"✅ Test completed successfully!")
-        else:
-            print("❌ No data retrieved in test")
+    print(f"\n✅ 필터링된 상장 비금융 기업 수: {len(target_df):,}개")
+
+    if len(target_df) == 0:
+        print("❌ No valid corporations found")
+        return
+
+    corp_codes = target_df["corp_code"].unique()[: args.sample]
+    names = [
+        target_df.loc[target_df["corp_code"] == code, "corp_name"].iloc[0]
+        for code in corp_codes
+    ]
+
+    years = range(args.start_year, args.end_year + 1)
+
+    print(
+        f"\n🧪 사업보고서 수집 테스트: 기업 {len(corp_codes)}개, 연도 [{args.start_year}, {args.end_year}]"
+    )
+    print("기업 리스트:", names)
+
+    statements = asyncio.run(
+        fetch_bulk_statements(api_key, corp_codes, years, workers=args.workers)
+    )
+
+    if not statements.empty:
+        out_path = Path(__file__).resolve().parent.parent / "data" / args.output
+        save_to_excel(statements, out_path)
+        print("✅ Test completed successfully!")
+    else:
+        print("❌ No data retrieved in test")
+
+
+if __name__ == "__main__":
+    main()
