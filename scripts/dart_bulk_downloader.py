@@ -22,7 +22,6 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 DART_CORPCODE_URL = "https://opendart.fss.or.kr/api/corpCode.xml"
 DART_SINGLE_ACCOUNT_URL = "https://opendart.fss.or.kr/api/fnlttSinglAcnt.json"
 
-
 class RateLimiter:
     """Simple asyncio rate limiter for API calls."""
 
@@ -45,7 +44,6 @@ class RateLimiter:
                     self.calls.popleft()
             self.calls.append(now)
 
-
 async def fetch_corp_codes(api_key: str) -> pd.DataFrame:
     """Download and parse DART corp code list."""
     url = f"{DART_CORPCODE_URL}?crtfc_key={api_key}"
@@ -57,7 +55,6 @@ async def fetch_corp_codes(api_key: str) -> pd.DataFrame:
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
         xml_data = zf.read("CORPCODE.xml").decode("utf-8")
     
-    # Parse XML manually for better control
     root = ET.fromstring(xml_data)
     data = []
     
@@ -68,32 +65,21 @@ async def fetch_corp_codes(api_key: str) -> pd.DataFrame:
         data.append(corp_dict)
     
     df = pd.DataFrame(data)
-    
-    # Print column info for debugging
     print(f"Available columns: {list(df.columns)}")
-    
     return df
 
-
 def filter_kospi_kosdaq_non_financial(df: pd.DataFrame) -> pd.DataFrame:
-    """Return only KOSPI/KOSDAQ non-financial firms."""
-    # Basic filter: firms with valid stock codes (6-digit numbers are typical)
     if "stock_code" not in df.columns:
         print("Error: 'stock_code' column not found!")
         return pd.DataFrame()
     
-    # Filter for firms with non-empty stock codes
     has_stock = df["stock_code"].notna() & (df["stock_code"].str.strip() != "")
-    
-    # Additional filter: stock code should be numeric and 6 digits (typical for listed companies)
-    # This helps filter out non-listed companies that might have other formats
     valid_stock = has_stock & df["stock_code"].str.match(r'^\d{6}$', na=False)
     
     print(f"Total firms: {len(df):,}")
     print(f"Firms with stock codes: {has_stock.sum():,}")
     print(f"Firms with valid 6-digit codes: {valid_stock.sum():,}")
     
-    # Filter out financial companies
     if "corp_name" in df.columns:
         financial_keywords = "금융|은행|보험|증권|캐피탈|투자|자산운용|신용|저축|카드|리스|신탁|펀드"
         is_financial = df["corp_name"].str.contains(financial_keywords, na=False, case=False)
@@ -106,7 +92,6 @@ def filter_kospi_kosdaq_non_financial(df: pd.DataFrame) -> pd.DataFrame:
     else:
         return df[valid_stock]
 
-
 async def fetch_single_statement(
     session: aiohttp.ClientSession,
     rate_limiter: RateLimiter,
@@ -118,17 +103,17 @@ async def fetch_single_statement(
         "crtfc_key": api_key,
         "corp_code": corp_code,
         "bsns_year": year,
-        "reprt_code": "11011",  # 사업보고서
-        "fs_div": "CFS",  # 연결재무제표 기본값
+        "reprt_code": "11011",
+        "fs_div": "CFS",
     }
     await rate_limiter.wait()
-    
+
     try:
         async with session.get(DART_SINGLE_ACCOUNT_URL, params=params) as resp:
             resp.raise_for_status()
             data = await resp.json()
 
-        if data.get("status") == "000":  # Success
+        if data.get("status") == "000":
             return pd.DataFrame(data.get("list", []))
         else:
             if fetch_single_statement.error_count < fetch_single_statement.MAX_ERROR_LOGS:
@@ -142,10 +127,8 @@ async def fetch_single_statement(
             fetch_single_statement.error_count += 1
         return pd.DataFrame()
 
-
 fetch_single_statement.error_count = 0
 fetch_single_statement.MAX_ERROR_LOGS = 5
-
 
 async def fetch_bulk_statements(
     api_key: str,
@@ -154,11 +137,10 @@ async def fetch_bulk_statements(
     workers: int = 5,
 ) -> pd.DataFrame:
     """Download statements for multiple companies in parallel."""
-    rate_limiter = RateLimiter(1000, 60.0)
+    rate_limiter = RateLimiter(800, 60.0)  # ✅ 분당 800회로 안정적 제한
     results: List[pd.DataFrame] = []
     sem = asyncio.Semaphore(workers)
     
-    # Convert to list for progress tracking
     corp_list = list(corp_codes)
     year_list = list(years)
     total_requests = len(corp_list) * len(year_list)
@@ -185,12 +167,10 @@ async def fetch_bulk_statements(
         return pd.concat(results, ignore_index=True)
     return pd.DataFrame()
 
-
 def save_to_excel(df: pd.DataFrame, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     df.to_excel(path, index=False, engine="openpyxl")
     print(f"Saved {len(df):,} rows to {path}")
-
 
 __all__ = [
     "fetch_corp_codes",
@@ -199,9 +179,7 @@ __all__ = [
     "save_to_excel",
 ]
 
-
 def main() -> None:
-    """Run a small test download for a subset of companies."""
     parser = argparse.ArgumentParser(description="DART bulk download helper")
     parser.add_argument("--sample", type=int, default=5, help="number of companies for the test run")
     parser.add_argument("--start-year", type=int, default=2022)
@@ -248,7 +226,6 @@ def main() -> None:
         print("✅ Test completed successfully!")
     else:
         print("❌ No data retrieved in test")
-
 
 if __name__ == "__main__":
     main()

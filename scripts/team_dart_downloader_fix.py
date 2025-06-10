@@ -16,11 +16,12 @@ from dart_bulk_downloader import (
     DART_SINGLE_ACCOUNT_URL,
 )
 
-# 초당 약 14~15회 수준으로 제한
+# ✅ 동기 요청에 대한 초당 14~15회 제한 함수
 def rate_limited_get(url, params, delay=0.07):
     time.sleep(delay)
     return requests.get(url, params=params, timeout=10)
 
+# ✅ 유효 보고서 존재 여부 확인 (연도별 순차 요청 + 제한 적용)
 def has_report_for_any_year(api_key: str, corp_code: str, years: range) -> bool:
     for year in years:
         params = {
@@ -39,6 +40,7 @@ def has_report_for_any_year(api_key: str, corp_code: str, years: range) -> bool:
             continue
     return False
 
+# ✅ 기업을 팀 단위로 나누기
 def split_corps_for_teams(corp_codes: List[str], chunk_size: int = 100) -> List[Tuple[int, List[str]]]:
     chunks = []
     for i in range(0, len(corp_codes), chunk_size):
@@ -47,14 +49,12 @@ def split_corps_for_teams(corp_codes: List[str], chunk_size: int = 100) -> List[
         chunks.append((team_num, chunk))
     return chunks
 
-# 비동기 병렬 요청 수 제한
+# ✅ 각 팀별 데이터 다운로드 실행
 async def download_team_data(api_key: str, team_num: int, corp_codes: List[str], years: range, output_dir: Path, workers: int = 10) -> Path:
     print(f"🚀 팀 {team_num} 다운로드 시작 - {len(corp_codes)}개 기업")
     start_time = datetime.now()
 
-    # fetch_bulk_statements 내부에서 semaphore 적용하도록 리팩터링되어야 함
-    statements = await fetch_bulk_statements(api_key, corp_codes, years, workers, max_concurrent=15)
-
+    statements = await fetch_bulk_statements(api_key, corp_codes, years, workers)
     filename = f"dart_statements_team_{team_num:02d}.xlsx"
     output_path = output_dir / filename
     save_to_excel(statements, output_path)
@@ -65,6 +65,7 @@ async def download_team_data(api_key: str, team_num: int, corp_codes: List[str],
     print(f"   데이터 행 수: {len(statements):,}")
     return output_path
 
+# ✅ 팀별 파일 병합
 def merge_team_files(team_files: List[Path], output_path: Path) -> None:
     print("\n📊 팀별 파일 병합 중...")
     all_data = []
@@ -82,6 +83,7 @@ def merge_team_files(team_files: List[Path], output_path: Path) -> None:
     else:
         print("❌ 병합할 파일이 없습니다.")
 
+# ✅ 메인 실행 함수
 async def main():
     parser = argparse.ArgumentParser(description='DART 재무제표 팀별 다운로드')
     parser.add_argument('--team', type=int, help='팀 번호 (1, 2, ...)')
