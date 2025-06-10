@@ -41,7 +41,7 @@ def has_report_for_any_year(api_key: str, corp_code: str, years: range) -> bool:
     return False
 
 # ✅ 기업을 팀 단위로 나누기
-def split_corps_for_teams(corp_codes: List[str], chunk_size: int = 100) -> List[Tuple[int, List[str]]]:
+def split_corps_for_teams(corp_codes: List[str], chunk_size: int = 500) -> List[Tuple[int, List[str]]]:
     chunks = []
     for i in range(0, len(corp_codes), chunk_size):
         team_num = i // chunk_size + 1
