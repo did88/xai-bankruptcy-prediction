@@ -119,6 +119,7 @@ async def fetch_single_statement(
         "corp_code": corp_code,
         "bsns_year": year,
         "reprt_code": "11011",  # 사업보고서
+        "fs_div": "CFS",  # 연결재무제표 기본값
     }
     await rate_limiter.wait()
     
@@ -126,15 +127,24 @@ async def fetch_single_statement(
         async with session.get(DART_SINGLE_ACCOUNT_URL, params=params) as resp:
             resp.raise_for_status()
             data = await resp.json()
-            
+
         if data.get("status") == "000":  # Success
             return pd.DataFrame(data.get("list", []))
         else:
-            # Don't print error for each request to avoid spam
+            if fetch_single_statement.error_count < fetch_single_statement.MAX_ERROR_LOGS:
+                msg = data.get("message", "")
+                print(f"API error {data.get('status')} for {corp_code} {year}: {msg}")
+                fetch_single_statement.error_count += 1
             return pd.DataFrame()
     except Exception as e:
-        # Don't print error for each request to avoid spam
+        if fetch_single_statement.error_count < fetch_single_statement.MAX_ERROR_LOGS:
+            print(f"Request error for {corp_code} {year}: {e}")
+            fetch_single_statement.error_count += 1
         return pd.DataFrame()
+
+
+fetch_single_statement.error_count = 0
+fetch_single_statement.MAX_ERROR_LOGS = 5
 
 
 async def fetch_bulk_statements(
