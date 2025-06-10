@@ -16,6 +16,14 @@ pip install -r requirements.txt
 python src/trainer.py
 ```
 
+### DART 재무제표 수집
+
+다음 스크립트는 DART API를 이용해 KOSPI/KOSDAQ 비금융기업의 재무제표를 병렬로 내려받습니다.
+
+```bash
+python -m src.dart_bulk_downloader
+```
+
 인터랙티브 예제는 `notebooks/` 디렉터리를 참고하세요.
 
 ## 향후 GPT 활용 계획
