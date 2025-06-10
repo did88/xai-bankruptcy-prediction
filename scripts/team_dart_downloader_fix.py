@@ -51,10 +51,18 @@ def split_corps_for_teams(corp_codes: List[str], chunk_size: int = 500) -> List[
 
 # ✅ 각 팀별 데이터 다운로드 실행
 async def download_team_data(api_key: str, team_num: int, corp_codes: List[str], years: range, output_dir: Path, workers: int = 10) -> Path:
-    print(f"🚀 팀 {team_num} 다운로드 시작 - {len(corp_codes)}개 기업")
+    print(f"🚀 팀 {team_num} 단단로운드 시작 - {len(corp_codes)}개 기업")
     start_time = datetime.now()
 
     statements = await fetch_bulk_statements(api_key, corp_codes, years, workers)
+
+    if not statements:
+        print(f"❌ 팀 {team_num}: 수집된 데이터가 없어 파일을 저장하지 않습니다.")
+        return
+
+    print(f"[디버그] 수집된 재미제표 수: {len(statements)}")
+    print(f"[디버그] 예시: {statements[:1]}")
+
     filename = f"dart_statements_team_{team_num:02d}.xlsx"
     output_path = output_dir / filename
     save_to_excel(statements, output_path)
@@ -65,9 +73,9 @@ async def download_team_data(api_key: str, team_num: int, corp_codes: List[str],
     print(f"   데이터 행 수: {len(statements):,}")
     return output_path
 
-# ✅ 팀별 파일 병합
+# ✅ 팀별 파일 벽합
 def merge_team_files(team_files: List[Path], output_path: Path) -> None:
-    print("\n📊 팀별 파일 병합 중...")
+    print("\n📊 팀별 파일 벽합 중...")
     all_data = []
     for file_path in sorted(team_files):
         if file_path.exists():
@@ -77,17 +85,17 @@ def merge_team_files(team_files: List[Path], output_path: Path) -> None:
     if all_data:
         merged_df = pd.concat(all_data, ignore_index=True)
         save_to_excel(merged_df, output_path)
-        print(f"\n✅ 병합 완료!")
+        print(f"\n✅ 벽합 완료!")
         print(f"   전체 데이터: {len(merged_df):,}행")
         print(f"   저장 위치: {output_path}")
     else:
-        print("❌ 병합할 파일이 없습니다.")
+        print("❌ 벽합할 파일이 없습니다.")
 
 # ✅ 메인 실행 함수
 async def main():
-    parser = argparse.ArgumentParser(description='DART 재무제표 팀별 다운로드')
+    parser = argparse.ArgumentParser(description='DART 재미제표 팀별 단다운로드')
     parser.add_argument('--team', type=int, help='팀 번호 (1, 2, ...)')
-    parser.add_argument('--merge-only', action='store_true', help='병합만 수행')
+    parser.add_argument('--merge-only', action='store_true', help='벽합만 수행')
     parser.add_argument('--list-teams', action='store_true', help='팀 분할 정보 표시')
     parser.add_argument('--workers', type=int, default=10, help='동시 작업 수')
     parser.add_argument('--start-year', type=int, default=2015)
@@ -139,7 +147,7 @@ async def main():
         team_data = next((chunk for chunk in team_chunks if chunk[0] == args.team), None)
         if team_data:
             team_num, corp_codes = team_data
-            print(f"\n🌟 팀 {team_num} 다운로드 설정:")
+            print(f"\n🌟 팀 {team_num} 단단로운드 설정:")
             print(f"   - 기업 수: {len(corp_codes)}개")
             print(f"   - 연도: {args.start_year} ~ {args.end_year}")
             print(f"   - 예상 요청 수: {len(corp_codes) * len(years):,}개")
