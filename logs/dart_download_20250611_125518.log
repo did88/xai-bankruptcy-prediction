@@ -1,0 +1,22 @@
+2025-06-11 12:55:18,611 - dart_downloader - INFO - 기업 코드 목록 다운로드 중...
+2025-06-11 12:55:20,600 - dart_downloader - INFO - 주식코드 순으로 정렬됨 (앞쪽에 대기업들이 위치)
+2025-06-11 12:55:20,601 - dart_downloader - INFO - 전체 기업 수: 3653개 (유효성 검증 건너뜀)
+2025-06-11 12:55:20,601 - dart_downloader - INFO - 팀 2 다운로드 설정:
+2025-06-11 12:55:20,602 - dart_downloader - INFO - - 기업 수: 100개
+2025-06-11 12:55:20,602 - dart_downloader - INFO - - 연도: 2015 ~ 2022
+2025-06-11 12:55:20,602 - dart_downloader - INFO - - 예상 요청 수: 800개
+2025-06-11 12:55:20,603 - dart_downloader - INFO - - 동시 작업 수: 10
+2025-06-11 12:55:20,603 - dart_downloader - INFO - 팀 2 다운로드 시작 - 100개 기업
+2025-06-11 12:56:25,436 - dart_downloader - INFO - 팀 2: 원시 데이터 크기 - 15632행
+2025-06-11 12:56:25,437 - dart_downloader - INFO - 팀 2: 데이터 컬럼 - ['corp_code', 'corp_name', 'stock_code', 'bsns_year', 'rcept_no', 'reprt_code', 'fs_div', 'fs_nm', 'sj_div', 'sj_nm', 'account_nm', 'thstrm_nm', 'thstrm_dt', 'thstrm_amount', 'frmtrm_nm', 'frmtrm_dt', 'frmtrm_amount', 'bfefrmtrm_nm', 'bfefrmtrm_dt', 'bfefrmtrm_amount', 'ord', 'currency']
+2025-06-11 12:56:25,457 - dart_downloader - INFO - 팀 2: 샘플 데이터 (처음 2행):
+  corp_code corp_name stock_code bsns_year        rcept_no  ... bfefrmtrm_nm   bfefrmtrm_dt bfefrmtrm_amount ord currency
+0  00128971      디엘건설     001880      2021  20220315001201  ...       제 63 기  2019.12.31 현재  743,900,738,228   2      KRW
+1  00128971      디엘건설     001880      2021  20220315001201  ...       제 63 기  2019.12.31 현재  107,819,168,401   4      KRW
+
+[2 rows x 22 columns]
+2025-06-11 12:56:25,462 - dart_downloader - INFO - 팀 2: 고유 기업 수 - 81개, 고유 연도 수 - 8개
+2025-06-11 12:56:25,463 - dart_downloader - INFO - 팀 2: 수집된 재무제표 수 - 15,632행
+2025-06-11 12:56:34,571 - dart_downloader - INFO - 팀 2 완료 - 74.0초 소요
+2025-06-11 12:56:34,572 - dart_downloader - INFO - 저장 위치: C:\apps\xai-bankruptcy-prediction\data\team_downloads\dart_statements_team_02.xlsx
+2025-06-11 12:56:34,577 - dart_downloader - INFO - 팀 2 다운로드 성공적으로 완료

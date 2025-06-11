@@ -1,0 +1,22 @@
+2025-06-11 12:59:51,035 - dart_downloader - INFO - 기업 코드 목록 다운로드 중...
+2025-06-11 12:59:52,778 - dart_downloader - INFO - 주식코드 순으로 정렬됨 (앞쪽에 대기업들이 위치)
+2025-06-11 12:59:52,779 - dart_downloader - INFO - 전체 기업 수: 3653개 (유효성 검증 건너뜀)
+2025-06-11 12:59:52,779 - dart_downloader - INFO - 팀 4 다운로드 설정:
+2025-06-11 12:59:52,780 - dart_downloader - INFO - - 기업 수: 100개
+2025-06-11 12:59:52,780 - dart_downloader - INFO - - 연도: 2015 ~ 2022
+2025-06-11 12:59:52,780 - dart_downloader - INFO - - 예상 요청 수: 800개
+2025-06-11 12:59:52,780 - dart_downloader - INFO - - 동시 작업 수: 10
+2025-06-11 12:59:52,781 - dart_downloader - INFO - 팀 4 다운로드 시작 - 100개 기업
+2025-06-11 13:03:15,752 - dart_downloader - INFO - 팀 4: 원시 데이터 크기 - 4468행
+2025-06-11 13:03:15,752 - dart_downloader - INFO - 팀 4: 데이터 컬럼 - ['corp_code', 'corp_name', 'stock_code', 'bsns_year', 'rcept_no', 'reprt_code', 'fs_div', 'fs_nm', 'sj_div', 'sj_nm', 'account_nm', 'thstrm_nm', 'thstrm_dt', 'thstrm_amount', 'frmtrm_nm', 'frmtrm_dt', 'frmtrm_amount', 'bfefrmtrm_nm', 'bfefrmtrm_dt', 'bfefrmtrm_amount', 'ord', 'currency']
+2025-06-11 13:03:15,772 - dart_downloader - INFO - 팀 4: 샘플 데이터 (처음 2행):
+  corp_code corp_name stock_code bsns_year        rcept_no  ... bfefrmtrm_nm   bfefrmtrm_dt bfefrmtrm_amount ord currency
+0  00167192        넥센     005720      2019  20200330000591  ...       제 50 기  2017.12.31 현재  158,949,722,204   1      KRW
+1  00167192        넥센     005720      2019  20200330000591  ...       제 50 기  2017.12.31 현재  926,502,125,470   3      KRW
+
+[2 rows x 22 columns]
+2025-06-11 13:03:15,774 - dart_downloader - INFO - 팀 4: 고유 기업 수 - 23개, 고유 연도 수 - 8개
+2025-06-11 13:03:15,774 - dart_downloader - INFO - 팀 4: 수집된 재무제표 수 - 4,468행
+2025-06-11 13:03:18,473 - dart_downloader - INFO - 팀 4 완료 - 205.7초 소요
+2025-06-11 13:03:18,475 - dart_downloader - INFO - 저장 위치: C:\apps\xai-bankruptcy-prediction\data\team_downloads\dart_statements_team_04.xlsx
+2025-06-11 13:03:18,476 - dart_downloader - INFO - 팀 4 다운로드 성공적으로 완료
