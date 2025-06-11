@@ -98,6 +98,7 @@ async def fetch_single_statement(
     api_key: str,
     corp_code: str,
     year: int,
+    max_retries: int = 2,
 ) -> pd.DataFrame:
     params = {
         "crtfc_key": api_key,
@@ -106,26 +107,32 @@ async def fetch_single_statement(
         "reprt_code": "11011",
         "fs_div": "CFS",
     }
-    await rate_limiter.wait()
+    for attempt in range(max_retries):
+        await rate_limiter.wait()
+        
+        try:
+            async with session.get(DART_SINGLE_ACCOUNT_URL, params=params) as resp:
+                resp.raise_for_status()
+                data = await resp.json()
 
-    try:
-        async with session.get(DART_SINGLE_ACCOUNT_URL, params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json()
-
-        if data.get("status") == "000":
-            return pd.DataFrame(data.get("list", []))
-        else:
-            if fetch_single_statement.error_count < fetch_single_statement.MAX_ERROR_LOGS:
-                msg = data.get("message", "")
-                print(f"API error {data.get('status')} for {corp_code} {year}: {msg}")
-                fetch_single_statement.error_count += 1
-            return pd.DataFrame()
-    except Exception as e:
-        if fetch_single_statement.error_count < fetch_single_statement.MAX_ERROR_LOGS:
-            print(f"Request error for {corp_code} {year}: {e}")
-            fetch_single_statement.error_count += 1
-        return pd.DataFrame()
+            if data.get("status") == "000":
+                return pd.DataFrame(data.get("list", []))
+            else:
+                if attempt == max_retries - 1:  # 마지막 시도에서만 로그
+                    if fetch_single_statement.error_count < fetch_single_statement.MAX_ERROR_LOGS:
+                        msg = data.get("message", "")
+                        print(f"API error {data.get('status')} for {corp_code} {year}: {msg}")
+                        fetch_single_statement.error_count += 1
+                return pd.DataFrame()
+        except Exception as e:
+            if attempt == max_retries - 1:  # 마지막 시도에서만 로그
+                if fetch_single_statement.error_count < fetch_single_statement.MAX_ERROR_LOGS:
+                    print(f"Request error for {corp_code} {year}: {e}")
+                    fetch_single_statement.error_count += 1
+            else:
+                await asyncio.sleep(1)  # 재시도 전 대기
+    
+    return pd.DataFrame()
 
 fetch_single_statement.error_count = 0
 fetch_single_statement.MAX_ERROR_LOGS = 5
@@ -137,7 +144,7 @@ async def fetch_bulk_statements(
     workers: int = 5,
 ) -> pd.DataFrame:
     """Download statements for multiple companies in parallel."""
-    rate_limiter = RateLimiter(800, 60.0)  # ✅ 분당 800회로 안정적 제한
+    rate_limiter = RateLimiter(800, 60.0)  # 분당 800회로 안정적 제한
     results: List[pd.DataFrame] = []
     sem = asyncio.Semaphore(workers)
     
@@ -157,7 +164,7 @@ async def fetch_bulk_statements(
                     results.append(df)
                 
                 completed += 1
-                if completed % 100 == 0:
+                if completed % 50 == 0:  # 더 자주 진행률 표시
                     print(f"Progress: {completed}/{total_requests} ({completed/total_requests*100:.1f}%)")
 
         tasks = [worker(corp, year) for corp in corp_list for year in year_list]
