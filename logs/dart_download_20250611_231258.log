@@ -1,0 +1,29 @@
+2025-06-11 23:12:58,651 - dart_downloader - INFO - 팀별 파일 병합 시작...
+2025-06-11 23:13:10,255 - dart_downloader - INFO - 파일 로드: dart_statements_team_01.xlsx - 20,071행
+2025-06-11 23:13:18,552 - dart_downloader - INFO - 파일 로드: dart_statements_team_02.xlsx - 15,632행
+2025-06-11 23:13:26,347 - dart_downloader - INFO - 파일 로드: dart_statements_team_03.xlsx - 15,320행
+2025-06-11 23:13:34,127 - dart_downloader - INFO - 파일 로드: dart_statements_team_04.xlsx - 15,495행
+2025-06-11 23:13:41,214 - dart_downloader - INFO - 파일 로드: dart_statements_team_05.xlsx - 14,633행
+2025-06-11 23:13:49,299 - dart_downloader - INFO - 파일 로드: dart_statements_team_06.xlsx - 14,887행
+2025-06-11 23:13:55,413 - dart_downloader - INFO - 파일 로드: dart_statements_team_07.xlsx - 13,615행
+2025-06-11 23:14:02,372 - dart_downloader - INFO - 파일 로드: dart_statements_team_08.xlsx - 14,668행
+2025-06-11 23:14:08,560 - dart_downloader - INFO - 파일 로드: dart_statements_team_09.xlsx - 13,569행
+2025-06-11 23:14:15,401 - dart_downloader - INFO - 파일 로드: dart_statements_team_10.xlsx - 12,949행
+2025-06-11 23:14:21,590 - dart_downloader - INFO - 파일 로드: dart_statements_team_11.xlsx - 9,824행
+2025-06-11 23:14:28,407 - dart_downloader - INFO - 파일 로드: dart_statements_team_12.xlsx - 13,411행
+2025-06-11 23:14:33,951 - dart_downloader - INFO - 파일 로드: dart_statements_team_13.xlsx - 10,793행
+2025-06-11 23:14:41,323 - dart_downloader - INFO - 파일 로드: dart_statements_team_14.xlsx - 13,630행
+2025-06-11 23:14:47,003 - dart_downloader - INFO - 파일 로드: dart_statements_team_15.xlsx - 11,532행
+2025-06-11 23:14:53,703 - dart_downloader - INFO - 파일 로드: dart_statements_team_16.xlsx - 12,912행
+2025-06-11 23:15:01,248 - dart_downloader - INFO - 파일 로드: dart_statements_team_17.xlsx - 13,655행
+2025-06-11 23:15:10,170 - dart_downloader - INFO - 파일 로드: dart_statements_team_18.xlsx - 15,073행
+2025-06-11 23:15:17,393 - dart_downloader - INFO - 파일 로드: dart_statements_team_19.xlsx - 13,712행
+2025-06-11 23:15:26,033 - dart_downloader - INFO - 파일 로드: dart_statements_team_20.xlsx - 17,548행
+2025-06-11 23:15:35,174 - dart_downloader - INFO - 파일 로드: dart_statements_team_21.xlsx - 15,239행
+2025-06-11 23:15:42,117 - dart_downloader - INFO - 파일 로드: dart_statements_team_22.xlsx - 13,928행
+2025-06-11 23:15:49,654 - dart_downloader - INFO - 파일 로드: dart_statements_team_23.xlsx - 14,853행
+2025-06-11 23:15:57,649 - dart_downloader - INFO - 파일 로드: dart_statements_team_24.xlsx - 12,887행
+2025-06-11 23:16:03,964 - dart_downloader - INFO - 파일 로드: dart_statements_team_25.xlsx - 12,037행
+2025-06-11 23:16:11,924 - dart_downloader - INFO - 파일 로드: dart_statements_team_26.xlsx - 12,366행
+2025-06-11 23:21:01,021 - dart_downloader - INFO - 병합 완료! 전체 데이터: 364,239행
+2025-06-11 23:21:01,024 - dart_downloader - INFO - 저장 위치: C:\Users\tktk5\Downloads\RiskRadar\data\dart_statements_merged.xlsx
