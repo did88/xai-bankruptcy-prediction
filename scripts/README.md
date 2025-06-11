@@ -1,171 +1,184 @@
-# DART 재무제표 다운로드 시스템
+# DART 재무제표 대량 다운로드 스크립트
 
-한국 DART(전자공시시스템)에서 상장기업의 재무제표를 효율적으로 다운로드하는 시스템입니다.
-
-## 🚀 주요 기능
-
-- **비동기 병렬 처리**: 여러 기업의 재무제표를 동시에 다운로드
-- **팀별 작업 분할**: 대용량 데이터를 팀 단위로 나누어 처리
-- **속도 제한**: DART API 제한사항을 준수한 안정적 다운로드
-- **재시도 메커니즘**: 실패한 요청에 대한 자동 재시도
-- **포괄적 로깅**: 상세한 로그 기록으로 문제 추적 가능
-- **데이터 검증**: 다운로드된 데이터의 유효성 검사
+이 디렉토리는 한국 전자공시시스템(DART) API를 사용하여 상장기업의 재무제표 데이터를 대량으로 다운로드하는 스크립트들을 포함합니다.
 
 ## 📁 파일 구조
 
-```
-scripts/
-├── dart_bulk_downloader.py      # 핵심 다운로드 엔진
-├── team_dart_downloader_fixed.py # 개선된 팀별 다운로드 스크립트
-├── config.py                     # 설정 파일
-├── utils.py                      # 공통 유틸리티 함수
-├── CORPCODE.xml                  # 기업 코드 데이터
-└── README.md                     # 이 문서
-```
+### 🔧 핵심 모듈
+- **`dart_bulk_downloader.py`**: DART API 호출 및 데이터 처리를 위한 핵심 유틸리티 모듈
+- **`team_dart_downloader_fixed.py`**: 팀별 분할 다운로드를 위한 메인 스크립트 (개선된 버전)
+- **`robust_team_downloader.py`**: 네트워크 안정성이 개선된 다운로더
 
-## 🛠️ 설치 및 설정
+### 🧪 테스트 스크립트
+- **`test_dart_comprehensive.py`**: 광범위한 DART API 테스트 (실제 데이터가 있는 기업 찾기)
+- **`test_known_good.py`**: 성공이 확인된 기업들로 다운로드 테스트
+- **`debug_dart_api.py`**: 기본 DART API 디버깅 스크립트
+- **`test_connection.py`**: DART API 연결 상태 진단 도구
 
-### 1. 필요한 패키지 설치
+### 📊 자동화 스크립트
+- **`download_teams_2_to_10.bat`**: 팀 2-10 자동 다운로드 배치 파일
+- **`download_all_teams.bat`**: 전체 팀 자동 다운로드 배치 파일
 
+## 🚀 사용법
+
+### 1. 환경 설정
+
+**API 키 설정**: 프로젝트 루트에 `.env` 파일 생성
 ```bash
-pip install pandas aiohttp python-dotenv openpyxl tqdm requests
+DART_API_KEY=your_dart_api_key_here
 ```
 
-### 2. API 키 설정
-
-프로젝트 루트에 `.env` 파일을 생성하고 DART API 키를 추가:
-
+**의존성 설치**: 
 ```bash
-DART_API_KEY=your_api_key_here
+pip install aiohttp pandas openpyxl python-dotenv tqdm
 ```
 
-> DART API 키는 [DART 오픈API](https://opendart.fss.or.kr/)에서 발급받을 수 있습니다.
+### 2. 기본 테스트
 
-## 📖 사용법
+**연결 상태 확인**:
+```bash
+python test_connection.py
+```
 
-### 기본 사용법
+**성공 확인된 기업들로 테스트**:
+```bash
+python test_known_good.py
+```
 
-#### 1. 팀 분할 정보 확인
+### 3. 대량 다운로드
 
+**팀별 수동 다운로드** (권장):
+```bash
+# 팀 1 다운로드 (유효성 검증 포함, 첫 실행 시)
+python team_dart_downloader_fixed.py --team 1
+
+# 팀 2부터는 유효성 검증 스킵하여 빠른 진행
+python team_dart_downloader_fixed.py --team 2 --skip-validation
+python team_dart_downloader_fixed.py --team 3 --skip-validation
+```
+
+**네트워크 문제 시 안정성 개선 버전**:
+```bash
+python robust_team_downloader.py --team 5 --skip-validation
+```
+
+**자동화 다운로드** (Windows):
+```bash
+# 팀 2-10 자동 다운로드
+download_teams_2_to_10.bat
+
+# 전체 팀 자동 다운로드 (팀 2-26 + 병합)
+download_all_teams.bat
+```
+
+### 4. 결과 확인 및 병합
+
+**팀 목록 확인**:
 ```bash
 python team_dart_downloader_fixed.py --list-teams
 ```
 
-#### 2. 특정 팀 데이터 다운로드
-
-```bash
-# 팀 1 다운로드
-python team_dart_downloader_fixed.py --team 1
-
-# 팀 2 다운로드 (더 많은 워커 사용)
-python team_dart_downloader_fixed.py --team 2 --workers 15
-```
-
-#### 3. 팀별 파일 병합
-
+**모든 팀 파일 병합**:
 ```bash
 python team_dart_downloader_fixed.py --merge-only
 ```
 
-### 고급 옵션
+## 📊 데이터 구조
 
-```bash
-# 연도 범위 설정
-python team_dart_downloader_fixed.py --team 1 --start-year 2018 --end-year 2023
+### 수집되는 데이터
+- **기업 정보**: 기업코드, 기업명, 주식코드
+- **연도**: 2015-2022년 (8년간)
+- **재무제표 구분**: 연결재무제표(CFS) 또는 개별재무제표(OFS)
+- **계정 항목**: 유동자산, 비유동자산, 자산총계, 부채, 자본 등
+- **금액 정보**: 당기, 전기, 전전기 금액
 
-# 팀당 기업 수 조정
-python team_dart_downloader_fixed.py --team 1 --chunk-size 50
+### 출력 파일
+- **개별 팀 파일**: `data/team_downloads/dart_statements_team_XX.xlsx`
+- **병합 파일**: `data/dart_statements_merged.xlsx`
+- **테스트 파일**: `data/dart_test_success.xlsx`
 
-# 유효성 검증 건너뛰기 (빠른 테스트용)
-python team_dart_downloader_fixed.py --team 1 --skip-validation
+### 데이터 컬럼 (22개)
+```
+corp_code, corp_name, stock_code, bsns_year, rcept_no, reprt_code, 
+fs_div, fs_nm, sj_div, sj_nm, account_nm, thstrm_nm, thstrm_dt, 
+thstrm_amount, frmtrm_nm, frmtrm_dt, frmtrm_amount, bfefrmtrm_nm, 
+bfefrmtrm_dt, bfefrmtrm_amount, ord, currency
 ```
 
-## ⚙️ 설정 옵션
+## ⚙️ 성능 및 제약사항
 
-`config.py`에서 다음 설정들을 조정할 수 있습니다:
+### API 제한
+- **속도 제한**: 분당 800회 요청
+- **동시 연결**: 최대 10개 워커
+- **재시도 로직**: 네트워크 오류 시 자동 재시도
 
-- `DEFAULT_WORKERS`: 기본 동시 작업 수 (10)
-- `DEFAULT_CHUNK_SIZE`: 팀당 기업 수 (100)
-- `API_RATE_LIMIT`: 분당 API 요청 수 (800)
-- `DEFAULT_START_YEAR`: 기본 시작 연도 (2015)
-- `DEFAULT_END_YEAR`: 기본 종료 연도 (2022)
+### 처리 규모
+- **전체 기업 수**: 약 3,653개 비금융 상장기업
+- **유효 기업 수**: 약 2,509개 (사업보고서 보유)
+- **팀별 크기**: 100개 기업씩
+- **예상 총 팀 수**: 26개 팀
 
-## 📊 출력 파일
+### 성능 지표
+- **팀당 소요시간**: 1-2분 (유효성 검증 스킵 시)
+- **전체 소요시간**: 25-30분 (26개 팀)
+- **데이터 크기**: 팀당 약 15,000-25,000행
 
-### 팀별 파일
-- 위치: `data/team_downloads/`
-- 형식: `dart_statements_team_01.xlsx`, `dart_statements_team_02.xlsx`, ...
+## 🔧 문제 해결
 
-### 병합된 파일
-- 위치: `data/dart_statements_merged.xlsx`
-- 내용: 모든 팀 데이터가 합쳐진 최종 파일
+### 일반적인 문제
+1. **"조회된 데이타가 없습니다" (API 오류 013)**: 정상적인 현상 (해당 기업/연도에 데이터 없음)
+2. **네트워크 연결 오류**: `robust_team_downloader.py` 사용 또는 잠시 대기 후 재시도
+3. **API 키 오류**: `.env` 파일의 API 키 확인
 
-### 로그 파일
-- 위치: `logs/`
-- 형식: `dart_downloader_YYYYMMDD_HHMMSS.log`
+### 디버깅 도구
+- **연결 진단**: `python test_connection.py`
+- **API 테스트**: `python debug_dart_api.py`
+- **광범위 테스트**: `python test_dart_comprehensive.py`
 
-## 🔍 데이터 구조
+## 📈 사용 예시
 
-다운로드된 Excel 파일은 다음과 같은 컬럼을 포함합니다:
+### 완전 자동화 워크플로우
+```bash
+# 1. 연결 테스트
+python test_connection.py
 
-- `corp_code`: 기업 코드
-- `bsns_year`: 사업연도
-- `account_nm`: 계정명
-- `fs_div`: 재무제표 구분
-- `thstrm_amount`: 당기금액
-- `frmtrm_amount`: 전기금액
-- 기타 재무제표 관련 컬럼들...
+# 2. 팀 1 다운로드 (유효성 검증 포함)
+python team_dart_downloader_fixed.py --team 1
 
-## ⚡ 성능 최적화 팁
+# 3. 자동화 스크립트 실행
+download_all_teams.bat
 
-1. **워커 수 조정**: 네트워크 환경에 따라 `--workers` 값을 조정
-2. **팀 크기 최적화**: 메모리 사용량에 따라 `--chunk-size` 조정
-3. **유효성 검증**: 테스트 시에는 `--skip-validation` 사용
-4. **재시도 설정**: `config.py`에서 `MAX_RETRIES` 값 조정
+# 4. 결과 확인
+python team_dart_downloader_fixed.py --list-teams
+```
 
-## 🚨 주의사항
+### 수동 제어 워크플로우
+```bash
+# 1-5팀 수동 다운로드
+for i in {2..5}; do
+    python team_dart_downloader_fixed.py --team $i --skip-validation
+done
 
-- DART API는 분당 요청 수 제한이 있으므로 속도 제한을 준수해야 합니다
-- 대용량 데이터 다운로드 시 충분한 디스크 공간을 확보하세요
-- API 키는 절대 공개하지 마세요 (`.env` 파일을 `.gitignore`에 추가)
+# 병합
+python team_dart_downloader_fixed.py --merge-only
+```
 
-## 🐛 문제 해결
+## 🎯 최종 결과물
 
-### 일반적인 오류
+성공적인 실행 후 다음을 얻을 수 있습니다:
+- **약 50만-100만 행**의 재무제표 데이터
+- **2,500개 기업 × 8년 × 평균 25개 계정항목**
+- **Excel 형태**로 저장되어 즉시 분석 가능
+- **기업명, 재무제표 구분, 연도별** 체계적 정리
 
-1. **API 키 오류**
-   ```
-   EnvironmentError: DART_API_KEY 환경변수를 설정하세요
-   ```
-   → `.env` 파일에 올바른 API 키를 설정했는지 확인
+## 📞 지원
 
-2. **속도 제한 오류**
-   ```
-   API error 020 for [corp_code] [year]: 호출횟수 제한 초과
-   ```
-   → `config.py`에서 `API_RATE_LIMIT` 값을 낮춰보세요
+문제 발생 시:
+1. **연결 테스트** 먼저 실행
+2. **로그 메시지** 확인
+3. **안정성 개선 버전** 시도
+4. **GitHub Issues**에 오류 로그와 함께 문제 보고
 
-3. **메모리 부족**
-   → `--chunk-size` 값을 줄이거나 `--workers` 수를 줄여보세요
+---
 
-### 로그 확인
-
-상세한 오류 정보는 `logs/` 디렉토리의 로그 파일에서 확인할 수 있습니다.
-
-## 📈 예상 처리 시간
-
-기업 수와 연도에 따른 대략적인 처리 시간:
-
-- 100개 기업 × 5년 = 약 10-15분
-- 500개 기업 × 8년 = 약 1-2시간
-- 전체 상장기업 × 8년 = 약 4-8시간
-
-> 실제 시간은 네트워크 상태와 서버 응답 속도에 따라 달라질 수 있습니다.
-
-## 🤝 기여하기
-
-버그 리포트나 기능 개선 제안은 이슈로 등록해주세요.
-
-## 📄 라이선스
-
-이 프로젝트는 교육 및 연구 목적으로 사용되며, 상업적 사용 시 DART API 이용약관을 준수해야 합니다.
+> **참고**: 이 스크립트는 공개된 DART API를 사용하며, 금융감독원의 이용약관을 준수합니다. 상업적 이용 시 별도 허가가 필요할 수 있습니다.
