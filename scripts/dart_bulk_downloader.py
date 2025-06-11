@@ -213,7 +213,7 @@ async def fetch_bulk_statements(
     include_corp_names: bool = True,
 ) -> pd.DataFrame:
     """Download statements for multiple companies in parallel."""
-    rate_limiter = RateLimiter(800, 60.0)  # 분당 800회로 안정적 제한
+    rate_limiter = RateLimiter(600, 60.0)  # 분당 600회로 안전하게 제한 (10,000회 제한 대응)
     results: List[pd.DataFrame] = []
     sem = asyncio.Semaphore(workers)
     

@@ -86,12 +86,12 @@ async def cached_team_download(team_num: int, skip_validation: bool = True, use_
         sample_names = team_corps['corp_name'].head(3).tolist()
         logger.info(f"- 샘플 기업: {', '.join(sample_names)}")
         
-        # 다운로드 실행
+        # 다운로드 실행 (속도 제한 강화)
         statements = await fetch_bulk_statements(
             api_key, 
             corp_codes, 
             years, 
-            workers=8,  # 안정적인 워커 수
+            workers=3,  # 워커 수 대폭 감소 (10→3)
             include_corp_names=True
         )
         
