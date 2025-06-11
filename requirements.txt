@@ -6,3 +6,5 @@ torch
 shap
 lime
 requests
+aiohttp
+openpyxl
