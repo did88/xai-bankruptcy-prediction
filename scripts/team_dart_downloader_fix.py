@@ -51,7 +51,7 @@ def split_corps_for_teams(corp_codes: List[str], chunk_size: int = 500) -> List[
 
 # ✅ 각 팀별 데이터 다운로드 실행
 async def download_team_data(api_key: str, team_num: int, corp_codes: List[str], years: range, output_dir: Path, workers: int = 10) -> Path:
-    print(f"🚀 팀 {team_num} 단단로운드 시작 - {len(corp_codes)}개 기업")
+    print(f"🚀 팀 {team_num} 다운로드 시작 - {len(corp_codes)}개 기업")
     start_time = datetime.now()
 
     statements = await fetch_bulk_statements(api_key, corp_codes, years, workers)
@@ -73,9 +73,9 @@ async def download_team_data(api_key: str, team_num: int, corp_codes: List[str],
     print(f"   데이터 행 수: {len(statements):,}")
     return output_path
 
-# ✅ 팀별 파일 벽합
+# ✅ 팀별 파일 병합
 def merge_team_files(team_files: List[Path], output_path: Path) -> None:
-    print("\n📊 팀별 파일 벽합 중...")
+    print("\n📊 팀별 파일 병합 중...")
     all_data = []
     for file_path in sorted(team_files):
         if file_path.exists():
@@ -85,7 +85,7 @@ def merge_team_files(team_files: List[Path], output_path: Path) -> None:
     if all_data:
         merged_df = pd.concat(all_data, ignore_index=True)
         save_to_excel(merged_df, output_path)
-        print(f"\n✅ 벽합 완료!")
+        print(f"\n✅ 병합 완료!")
         print(f"   전체 데이터: {len(merged_df):,}행")
         print(f"   저장 위치: {output_path}")
     else:
