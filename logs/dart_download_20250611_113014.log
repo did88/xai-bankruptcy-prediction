@@ -1,0 +1,23 @@
+2025-06-11 11:30:14,090 - dart_downloader - INFO - 기업 코드 목록 다운로드 중...
+2025-06-11 11:30:16,234 - dart_downloader - INFO - 주식코드 순으로 정렬됨 (앞쪽에 대기업들이 위치)
+2025-06-11 11:30:16,234 - dart_downloader - INFO - 유효한 사업보고서가 있는 기업 필터링 중...
+2025-06-11 12:12:09,463 - dart_downloader - INFO - 유효 기업 수: 2509개
+2025-06-11 12:12:09,463 - dart_downloader - INFO - 팀 1 다운로드 설정:
+2025-06-11 12:12:09,464 - dart_downloader - INFO - - 기업 수: 100개
+2025-06-11 12:12:09,464 - dart_downloader - INFO - - 연도: 2015 ~ 2022
+2025-06-11 12:12:09,464 - dart_downloader - INFO - - 예상 요청 수: 800개
+2025-06-11 12:12:09,464 - dart_downloader - INFO - - 동시 작업 수: 10
+2025-06-11 12:12:09,464 - dart_downloader - INFO - 팀 1 다운로드 시작 - 100개 기업
+2025-06-11 12:13:13,770 - dart_downloader - INFO - 팀 1: 원시 데이터 크기 - 20071행
+2025-06-11 12:13:13,771 - dart_downloader - INFO - 팀 1: 데이터 컬럼 - ['corp_code', 'corp_name', 'stock_code', 'bsns_year', 'rcept_no', 'reprt_code', 'fs_div', 'fs_nm', 'sj_div', 'sj_nm', 'account_nm', 'thstrm_nm', 'thstrm_dt', 'thstrm_amount', 'frmtrm_nm', 'frmtrm_dt', 'frmtrm_amount', 'bfefrmtrm_nm', 'bfefrmtrm_dt', 'bfefrmtrm_amount', 'ord', 'currency']
+2025-06-11 12:13:13,795 - dart_downloader - INFO - 팀 1: 샘플 데이터 (처음 2행):
+  corp_code corp_name stock_code bsns_year        rcept_no  ... bfefrmtrm_nm   bfefrmtrm_dt bfefrmtrm_amount ord currency
+0  00119195      동화약품     000020      2015  20160330001826  ...       제 85 기  2013.12.31 현재  116,759,938,196   2      KRW
+1  00119195      동화약품     000020      2015  20160330001826  ...       제 85 기  2013.12.31 현재  199,405,602,533   4      KRW
+
+[2 rows x 22 columns]
+2025-06-11 12:13:13,803 - dart_downloader - INFO - 팀 1: 고유 기업 수 - 100개, 고유 연도 수 - 8개
+2025-06-11 12:13:13,804 - dart_downloader - INFO - 팀 1: 수집된 재무제표 수 - 20,071행
+2025-06-11 12:13:24,267 - dart_downloader - INFO - 팀 1 완료 - 74.8초 소요
+2025-06-11 12:13:24,267 - dart_downloader - INFO - 저장 위치: C:\apps\xai-bankruptcy-prediction\data\team_downloads\dart_statements_team_01.xlsx
+2025-06-11 12:13:24,274 - dart_downloader - INFO - 팀 1 다운로드 성공적으로 완료
