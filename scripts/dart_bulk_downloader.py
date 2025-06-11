@@ -100,37 +100,50 @@ async def fetch_single_statement(
     year: int,
     max_retries: int = 2,
 ) -> pd.DataFrame:
-    params = {
-        "crtfc_key": api_key,
-        "corp_code": corp_code,
-        "bsns_year": year,
-        "reprt_code": "11011",
-        "fs_div": "CFS",
-    }
-    for attempt in range(max_retries):
-        await rate_limiter.wait()
+    # 연결재무제표와 개별재무제표 모두 시도
+    fs_types = [("CFS", "연결"), ("OFS", "개별")]
+    
+    for fs_div, fs_name in fs_types:
+        params = {
+            "crtfc_key": api_key,
+            "corp_code": corp_code,
+            "bsns_year": year,
+            "reprt_code": "11011",
+            "fs_div": fs_div,
+        }
         
-        try:
-            async with session.get(DART_SINGLE_ACCOUNT_URL, params=params) as resp:
-                resp.raise_for_status()
-                data = await resp.json()
+        for attempt in range(max_retries):
+            await rate_limiter.wait()
+            
+            try:
+                async with session.get(DART_SINGLE_ACCOUNT_URL, params=params) as resp:
+                    resp.raise_for_status()
+                    data = await resp.json()
 
-            if data.get("status") == "000":
-                return pd.DataFrame(data.get("list", []))
-            else:
+                if data.get("status") == "000":
+                    list_data = data.get("list", [])
+                    if list_data:  # 데이터가 있으면 바로 반환
+                        df = pd.DataFrame(list_data)
+                        # API 응답에 corp_code와 bsns_year가 없으면 추가
+                        if 'corp_code' not in df.columns:
+                            df['corp_code'] = corp_code
+                        if 'bsns_year' not in df.columns:
+                            df['bsns_year'] = year
+                        df['fs_div'] = fs_div  # 재무제표 구분 추가
+                        return df
+                else:
+                    if attempt == max_retries - 1:  # 마지막 시도에서만 로그
+                        if fetch_single_statement.error_count < fetch_single_statement.MAX_ERROR_LOGS:
+                            msg = data.get("message", "")
+                            print(f"API error {data.get('status')} for {corp_code} {year} {fs_name}: {msg}")
+                            fetch_single_statement.error_count += 1
+            except Exception as e:
                 if attempt == max_retries - 1:  # 마지막 시도에서만 로그
                     if fetch_single_statement.error_count < fetch_single_statement.MAX_ERROR_LOGS:
-                        msg = data.get("message", "")
-                        print(f"API error {data.get('status')} for {corp_code} {year}: {msg}")
+                        print(f"Request error for {corp_code} {year} {fs_name}: {e}")
                         fetch_single_statement.error_count += 1
-                return pd.DataFrame()
-        except Exception as e:
-            if attempt == max_retries - 1:  # 마지막 시도에서만 로그
-                if fetch_single_statement.error_count < fetch_single_statement.MAX_ERROR_LOGS:
-                    print(f"Request error for {corp_code} {year}: {e}")
-                    fetch_single_statement.error_count += 1
-            else:
-                await asyncio.sleep(1)  # 재시도 전 대기
+                else:
+                    await asyncio.sleep(1)  # 재시도 전 대기
     
     return pd.DataFrame()
 
@@ -142,6 +155,7 @@ async def fetch_bulk_statements(
     corp_codes: Iterable[str],
     years: Iterable[int],
     workers: int = 5,
+    include_corp_names: bool = True,
 ) -> pd.DataFrame:
     """Download statements for multiple companies in parallel."""
     rate_limiter = RateLimiter(800, 60.0)  # 분당 800회로 안정적 제한
@@ -152,6 +166,17 @@ async def fetch_bulk_statements(
     year_list = list(years)
     total_requests = len(corp_list) * len(year_list)
     completed = 0
+    
+    # 기업명 매핑을 위한 기업코드 데이터 가져오기
+    corp_name_map = {}
+    if include_corp_names:
+        try:
+            corp_df = await fetch_corp_codes(api_key)
+            corp_name_map = dict(zip(corp_df['corp_code'], corp_df['corp_name']))
+            print(f"기업명 매핑: {len(corp_name_map)}개 기업")
+        except Exception as e:
+            print(f"기업명 매핑 실패: {e}, 기업명 없이 진행")
+            include_corp_names = False
 
     async with aiohttp.ClientSession() as session:
         async def worker(corp: str, year: int) -> None:
@@ -159,8 +184,10 @@ async def fetch_bulk_statements(
             async with sem:
                 df = await fetch_single_statement(session, rate_limiter, api_key, corp, year)
                 if not df.empty:
-                    df.insert(0, "corp_code", corp)
-                    df.insert(1, "bsns_year", year)
+                    # 기업명 추가
+                    if include_corp_names and corp in corp_name_map:
+                        df['corp_name'] = corp_name_map[corp]
+                    
                     results.append(df)
                 
                 completed += 1
@@ -171,7 +198,18 @@ async def fetch_bulk_statements(
         await asyncio.gather(*tasks)
 
     if results:
-        return pd.concat(results, ignore_index=True)
+        final_df = pd.concat(results, ignore_index=True)
+        
+        # 컬럼 순서 정리 (기업 정보를 앞쪽으로)
+        if include_corp_names and 'corp_name' in final_df.columns:
+            cols = final_df.columns.tolist()
+            # 기업 관련 컬럼들을 앞으로 이동
+            priority_cols = ['corp_code', 'corp_name', 'stock_code', 'bsns_year']
+            other_cols = [col for col in cols if col not in priority_cols]
+            reordered_cols = [col for col in priority_cols if col in cols] + other_cols
+            final_df = final_df[reordered_cols]
+        
+        return final_df
     return pd.DataFrame()
 
 def save_to_excel(df: pd.DataFrame, path: Path) -> None:

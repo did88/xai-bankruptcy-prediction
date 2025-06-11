@@ -1,0 +1,10 @@
+2025-06-11 11:01:39,316 - dart_downloader - INFO - 기업 코드 목록 다운로드 중...
+2025-06-11 11:01:41,171 - dart_downloader - INFO - 전체 기업 수: 3653개 (유효성 검증 건너뜀)
+2025-06-11 11:01:41,171 - dart_downloader - INFO - 팀 1 다운로드 설정:
+2025-06-11 11:01:41,172 - dart_downloader - INFO - - 기업 수: 100개
+2025-06-11 11:01:41,172 - dart_downloader - INFO - - 연도: 2015 ~ 2022
+2025-06-11 11:01:41,172 - dart_downloader - INFO - - 예상 요청 수: 800개
+2025-06-11 11:01:41,173 - dart_downloader - INFO - - 동시 작업 수: 10
+2025-06-11 11:01:41,173 - dart_downloader - INFO - 팀 1 다운로드 시작 - 100개 기업
+2025-06-11 11:01:44,128 - dart_downloader - WARNING - 팀 1: 수집된 데이터가 없거나 유효하지 않아 파일을 저장하지 않습니다.
+2025-06-11 11:01:44,128 - dart_downloader - ERROR - 팀 1 다운로드 실패

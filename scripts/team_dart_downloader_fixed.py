@@ -11,6 +11,7 @@ from datetime import datetime
 import argparse
 import requests
 from tqdm import tqdm
+import aiohttp
 
 from dart_bulk_downloader import (
     fetch_corp_codes,
@@ -85,6 +86,45 @@ def has_report_for_any_year(api_key: str, corp_code: str, years: range, max_retr
                 time.sleep(1)  # 재시도 전 대기
     return False
 
+# 단일 API 호출 테스트 함수
+async def test_single_api_call(api_key: str, corp_code: str, years: range, logger: logging.Logger) -> None:
+    """단일 API 호출을 테스트하여 문제를 진단"""
+    async with aiohttp.ClientSession() as session:
+        for year in list(years)[:3]:  # 처음 3개 연도만 테스트
+            params = {
+                "crtfc_key": api_key,
+                "corp_code": corp_code,
+                "bsns_year": year,
+                "reprt_code": "11011",
+                "fs_div": "CFS",
+            }
+            
+            try:
+                async with session.get(DART_SINGLE_ACCOUNT_URL, params=params) as resp:
+                    logger.info(f"API 테스트 {corp_code} {year}: HTTP {resp.status}")
+                    
+                    if resp.status == 200:
+                        data = await resp.json()
+                        status = data.get("status", "")
+                        message = data.get("message", "")
+                        list_data = data.get("list", [])
+                        
+                        logger.info(f"  API 상태: {status}, 메시지: {message}")
+                        logger.info(f"  데이터 항목 수: {len(list_data)}")
+                        
+                        if status == "000" and list_data:
+                            logger.info(f"  성공: {corp_code} {year}년 데이터 있음")
+                            return  # 성공하면 종료
+                        elif status != "000":
+                            logger.warning(f"  API 오류: {status} - {message}")
+                    else:
+                        logger.error(f"  HTTP 오류: {resp.status}")
+                        
+            except Exception as e:
+                logger.error(f"  요청 실패: {e}")
+    
+    logger.error(f"모든 연도에서 {corp_code} 데이터 없음")
+
 # 기업을 팀 단위로 나누기
 def split_corps_for_teams(corp_codes: List[str], chunk_size: int = 100) -> List[Tuple[int, List[str]]]:
     """기업 코드를 팀별로 분할"""
@@ -123,9 +163,41 @@ async def download_team_data(
 
     try:
         statements = await fetch_bulk_statements(api_key, corp_codes, years, workers)
+        
+        # 디버깅 정보 추가
+        logger.info(f"팀 {team_num}: 원시 데이터 크기 - {len(statements)}행")
+        
+        if not statements.empty:
+            logger.info(f"팀 {team_num}: 데이터 컬럼 - {list(statements.columns)}")
+            logger.info(f"팀 {team_num}: 샘플 데이터 (처음 2행):\n{statements.head(2)}")
+            
+            # 고유 기업 수 확인
+            unique_corps = statements['corp_code'].nunique() if 'corp_code' in statements.columns else 0
+            unique_years = statements['bsns_year'].nunique() if 'bsns_year' in statements.columns else 0
+            logger.info(f"팀 {team_num}: 고유 기업 수 - {unique_corps}개, 고유 연도 수 - {unique_years}개")
+        else:
+            logger.warning(f"팀 {team_num}: 빈 DataFrame 반환됨")
 
         if not validate_financial_data(statements):
             logger.warning(f"팀 {team_num}: 수집된 데이터가 없거나 유효하지 않아 파일을 저장하지 않습니다.")
+            
+            # 빈 데이터의 원인 분석
+            if statements.empty:
+                logger.error(f"팀 {team_num}: 모든 API 요청에서 빈 응답 반환")
+                logger.info("가능한 원인:")
+                logger.info("1. 선택된 기업들에 해당 연도 데이터가 없음")
+                logger.info("2. API 키 권한 문제")
+                logger.info("3. 네트워크 연결 문제")
+                logger.info("4. DART 서버 일시적 문제")
+                
+                # 단일 요청 테스트 수행
+                logger.info("단일 요청 테스트 시작...")
+                await test_single_api_call(api_key, corp_codes[0], years, logger)
+            else:
+                logger.error(f"팀 {team_num}: 데이터는 있지만 필수 컬럼 누락")
+                logger.info(f"현재 컬럼: {list(statements.columns)}")
+                logger.info(f"필수 컬럼: ['corp_code', 'bsns_year']")
+            
             return None
 
         logger.info(f"팀 {team_num}: 수집된 재무제표 수 - {len(statements):,}행")
@@ -225,6 +297,10 @@ async def main():
     corp_df = await fetch_corp_codes(api_key)
     target_df = filter_kospi_kosdaq_non_financial(corp_df)
     years = range(args.start_year, args.end_year + 1)
+    
+    # 주식코드로 정렬 (일반적으로 오래된/큰 기업들이 작은 번호를 가짐)
+    target_df = target_df.sort_values('stock_code').reset_index(drop=True)
+    logger.info(f"주식코드 순으로 정렬됨 (앞쪽에 대기업들이 위치)")
 
     # 유효성 검증 (옵션)
     if not args.skip_validation:
