@@ -1,0 +1,22 @@
+2025-06-11 12:58:30,996 - dart_downloader - INFO - 기업 코드 목록 다운로드 중...
+2025-06-11 12:58:33,666 - dart_downloader - INFO - 주식코드 순으로 정렬됨 (앞쪽에 대기업들이 위치)
+2025-06-11 12:58:33,667 - dart_downloader - INFO - 전체 기업 수: 3653개 (유효성 검증 건너뜀)
+2025-06-11 12:58:33,667 - dart_downloader - INFO - 팀 3 다운로드 설정:
+2025-06-11 12:58:33,667 - dart_downloader - INFO - - 기업 수: 100개
+2025-06-11 12:58:33,667 - dart_downloader - INFO - - 연도: 2015 ~ 2022
+2025-06-11 12:58:33,668 - dart_downloader - INFO - - 예상 요청 수: 800개
+2025-06-11 12:58:33,668 - dart_downloader - INFO - - 동시 작업 수: 10
+2025-06-11 12:58:33,668 - dart_downloader - INFO - 팀 3 다운로드 시작 - 100개 기업
+2025-06-11 12:59:40,676 - dart_downloader - INFO - 팀 3: 원시 데이터 크기 - 15320행
+2025-06-11 12:59:40,676 - dart_downloader - INFO - 팀 3: 데이터 컬럼 - ['corp_code', 'corp_name', 'stock_code', 'bsns_year', 'rcept_no', 'reprt_code', 'fs_div', 'fs_nm', 'sj_div', 'sj_nm', 'account_nm', 'thstrm_nm', 'thstrm_dt', 'thstrm_amount', 'frmtrm_nm', 'frmtrm_dt', 'frmtrm_amount', 'bfefrmtrm_nm', 'bfefrmtrm_dt', 'bfefrmtrm_amount', 'ord', 'currency']
+2025-06-11 12:59:40,695 - dart_downloader - INFO - 팀 3: 샘플 데이터 (처음 2행):
+  corp_code corp_name stock_code bsns_year        rcept_no  ... bfefrmtrm_nm   bfefrmtrm_dt bfefrmtrm_amount ord currency
+0  00161860      한성기업     003680      2016  20170331003061  ...       제 46 기  2014.12.31 현재   93,822,024,002   2      KRW
+1  00161860      한성기업     003680      2016  20170331003061  ...       제 46 기  2014.12.31 현재  119,782,521,555   4      KRW
+
+[2 rows x 22 columns]
+2025-06-11 12:59:40,699 - dart_downloader - INFO - 팀 3: 고유 기업 수 - 80개, 고유 연도 수 - 8개
+2025-06-11 12:59:40,699 - dart_downloader - INFO - 팀 3: 수집된 재무제표 수 - 15,320행
+2025-06-11 12:59:49,470 - dart_downloader - INFO - 팀 3 완료 - 75.8초 소요
+2025-06-11 12:59:49,471 - dart_downloader - INFO - 저장 위치: C:\apps\xai-bankruptcy-prediction\data\team_downloads\dart_statements_team_03.xlsx
+2025-06-11 12:59:49,476 - dart_downloader - INFO - 팀 3 다운로드 성공적으로 완료
