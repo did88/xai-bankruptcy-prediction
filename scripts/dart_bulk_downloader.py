@@ -45,28 +45,83 @@ class RateLimiter:
             self.calls.append(now)
 
 async def fetch_corp_codes(api_key: str) -> pd.DataFrame:
-    """Download and parse DART corp code list."""
+    """Download and parse DART corp code list with error handling."""
     url = f"{DART_CORPCODE_URL}?crtfc_key={api_key}"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
-            resp.raise_for_status()
-            data = await resp.read()
+    
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            print(f"기업 코드 다운로드 시도 {attempt + 1}/{max_retries}...")
+            
+            # 타임아웃과 헤더 설정
+            timeout = aiohttp.ClientTimeout(total=120, connect=30)
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            async with aiohttp.ClientSession(timeout=timeout, headers=headers) as session:
+                async with session.get(url) as resp:
+                    print(f"HTTP 상태 코드: {resp.status}")
+                    print(f"Content-Type: {resp.headers.get('Content-Type', 'Unknown')}")
+                    
+                    resp.raise_for_status()
+                    data = await resp.read()
+                    print(f"응답 데이터 크기: {len(data)} bytes")
+                    
+                    # 응답이 ZIP 파일인지 확인
+                    if len(data) < 10:
+                        raise ValueError(f"응답 데이터가 너무 짧습니다: {len(data)} bytes")
+                    
+                    # ZIP 파일 매직 넘버 확인 (PK)
+                    if not data.startswith(b'PK'):
+                        # 텍스트 응답인 경우 내용 확인
+                        try:
+                            text_response = data.decode('utf-8')[:500]
+                            print(f"비ZIP 응답 내용 (처음 500자): {text_response}")
+                        except:
+                            print(f"비ZIP 응답 내용 (hex): {data[:50].hex()}")
+                        
+                        if attempt < max_retries - 1:
+                            wait_time = (attempt + 1) * 5
+                            print(f"ZIP 파일이 아닙니다. {wait_time}초 후 재시도...")
+                            await asyncio.sleep(wait_time)
+                            continue
+                        else:
+                            raise ValueError("ZIP 파일 형식이 아닌 응답을 받았습니다")
 
-    with zipfile.ZipFile(io.BytesIO(data)) as zf:
-        xml_data = zf.read("CORPCODE.xml").decode("utf-8")
+            # ZIP 파일 처리
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                xml_data = zf.read("CORPCODE.xml").decode("utf-8")
+            
+            root = ET.fromstring(xml_data)
+            data_list = []
+            
+            for corp in root.findall('.//list'):
+                corp_dict = {}
+                for child in corp:
+                    corp_dict[child.tag] = child.text
+                data_list.append(corp_dict)
+            
+            df = pd.DataFrame(data_list)
+            print(f"Available columns: {list(df.columns)}")
+            print(f"✅ 기업 코드 다운로드 성공: {len(df)}개 기업")
+            return df
+            
+        except asyncio.TimeoutError:
+            print(f"❌ 시도 {attempt + 1}: 타임아웃 (120초)")
+        except aiohttp.ClientError as e:
+            print(f"❌ 시도 {attempt + 1}: 네트워크 오류 - {e}")
+        except zipfile.BadZipFile as e:
+            print(f"❌ 시도 {attempt + 1}: ZIP 파일 오류 - {e}")
+        except Exception as e:
+            print(f"❌ 시도 {attempt + 1}: 기타 오류 - {e}")
+        
+        if attempt < max_retries - 1:
+            wait_time = (attempt + 1) * 10  # 점진적으로 대기 시간 증가
+            print(f"⏳ {wait_time}초 대기 후 재시도...")
+            await asyncio.sleep(wait_time)
     
-    root = ET.fromstring(xml_data)
-    data = []
-    
-    for corp in root.findall('.//list'):
-        corp_dict = {}
-        for child in corp:
-            corp_dict[child.tag] = child.text
-        data.append(corp_dict)
-    
-    df = pd.DataFrame(data)
-    print(f"Available columns: {list(df.columns)}")
-    return df
+    raise RuntimeError(f"기업 코드 다운로드가 {max_retries}번 모두 실패했습니다")
 
 def filter_kospi_kosdaq_non_financial(df: pd.DataFrame) -> pd.DataFrame:
     if "stock_code" not in df.columns:
