@@ -23,6 +23,18 @@ python src/bankruptcy_models.py your_data.xlsx
 python -m src.dart_bulk_downloader
 ```
 
+#### 데이터 수집 기준
+
+1. `https://opendart.fss.or.kr/api/corpCode.xml` 엔드포인트로 전체 기업 코드 목록을 받아옵니다.
+2. 6자리 주식코드가 존재하는 기업 중 KOSPI/KOSDAQ 상장사를 선택합니다.
+3. 기업명에 `은행`, `보험`, `증권` 등 금융 관련 키워드가 포함된 경우 제외하여 비금융 기업만 남깁니다.
+4. 각 `corp_code`에 대해 `https://opendart.fss.or.kr/api/fnlttSinglAcnt.json`을 호출합니다.
+   - `bsns_year`는 기본적으로 2015~2022년을 대상으로 합니다.
+   - `reprt_code`는 사업보고서(`11011`)를 사용합니다.
+   - 우선 연결재무제표(`fs_div=CFS`)를 시도하고, 데이터가 없으면 개별재무제표(`fs_div=OFS`)를 조회합니다.
+5. 요청 속도는 분당 600회 이하로 제한하여 DART의 이용 제한에 저촉되지 않도록 합니다.
+6. 최종 데이터에는 기업코드, 기업명, 주식코드, 연도, 재무제표 구분 등 22개 컬럼이 포함됩니다.
+
 인터랙티브 예제는 `notebooks/` 디렉터리를 참고하세요.
 
 ## 향후 계획
