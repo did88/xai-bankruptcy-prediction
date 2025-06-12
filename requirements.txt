@@ -7,3 +7,4 @@ torch
 requests
 aiohttp
 openpyxl
+pykrx
