@@ -1,0 +1,97 @@
+import asyncio
+import os
+from pathlib import Path
+import argparse
+from typing import List
+
+from dart_bulk_downloader import (
+    fetch_corp_codes,
+    filter_kospi_kosdaq_non_financial,
+    fetch_bulk_statements,
+    save_to_excel,
+)
+
+BATCH_SIZE = 100
+MAX_CALLS_PER_MINUTE = 1000
+DAILY_LIMIT = 20000
+
+
+async def download_batch(
+    api_key: str,
+    batch_num: int,
+    corp_codes: List[str],
+    years: range,
+    output_dir: Path,
+    workers: int,
+) -> None:
+    output_path = output_dir / f"dart_statements_2015_2023_batch_{batch_num:02d}.xlsx"
+    if output_path.exists():
+        print(f"\u23ed\ufe0f Batch {batch_num} already downloaded. Skipping.")
+        return
+
+    df = await fetch_bulk_statements(
+        api_key,
+        corp_codes,
+        years,
+        workers=workers,
+        include_corp_names=True,
+        max_calls_per_minute=MAX_CALLS_PER_MINUTE,
+    )
+
+    if not df.empty:
+        save_to_excel(df, output_path)
+    else:
+        print(f"\u26a0\ufe0f Batch {batch_num} returned no data")
+
+
+async def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Download DART statements (2015-2023) in batches"
+    )
+    parser.add_argument("--start", type=int, default=1, help="Start batch number")
+    parser.add_argument("--end", type=int, help="End batch number (inclusive)")
+    parser.add_argument(
+        "--workers", type=int, default=5, help="Number of concurrent workers"
+    )
+    args = parser.parse_args()
+
+    api_key = os.getenv("DART_API_KEY")
+    if not api_key:
+        raise EnvironmentError("Set DART_API_KEY in your environment or .env file")
+
+    base_dir = Path(__file__).resolve().parent.parent
+    output_dir = base_dir / "data" / "batches_2015_2023"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print("\ud83d\udcdd Fetching corporation codes...")
+    corp_df = await fetch_corp_codes(api_key)
+    target_df = filter_kospi_kosdaq_non_financial(corp_df).sort_values("stock_code")
+    corp_codes = target_df["corp_code"].tolist()
+
+    batches = [
+        corp_codes[i : i + BATCH_SIZE] for i in range(0, len(corp_codes), BATCH_SIZE)
+    ]
+    total_batches = len(batches)
+
+    start = max(1, args.start)
+    end = min(args.end if args.end else total_batches, total_batches)
+
+    years = range(2015, 2024)
+    daily_requests = 0
+
+    for batch_num in range(start, end + 1):
+        batch_codes = batches[batch_num - 1]
+        est_requests = len(batch_codes) * len(years) * 2
+        if daily_requests + est_requests > DAILY_LIMIT:
+            print(
+                f"\u26d4\ufe0f Daily API limit of {DAILY_LIMIT} requests reached. Stopping."
+            )
+            break
+        await download_batch(
+            api_key, batch_num, batch_codes, years, output_dir, args.workers
+        )
+        daily_requests += est_requests
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
