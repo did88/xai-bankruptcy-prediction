@@ -81,6 +81,7 @@ async def main() -> None:
         corp_codes[i: i + BATCH_SIZE] for i in range(0, len(corp_codes), BATCH_SIZE)
     ]
     total_batches = len(batches)
+    print(f"[INFO] Total batches: {total_batches}")
 
     start = max(1, args.start)
     end = min(args.end if args.end else total_batches, total_batches)
@@ -94,6 +95,10 @@ async def main() -> None:
             api_key, batch_num, batch_codes, years, output_dir, args.workers
         )
         await asyncio.sleep(1.5)  # 각 배치 간 추가 딜레이로 안정성 확보
+
+    print(
+        f"[INFO] Completed batches {start} to {end} / {total_batches} total"
+    )
 
 
 if __name__ == "__main__":
