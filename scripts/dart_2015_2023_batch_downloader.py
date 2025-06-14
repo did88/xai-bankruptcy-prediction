@@ -13,6 +13,12 @@ from dart_bulk_downloader import (
 
 BATCH_SIZE = 100
 MAX_CALLS_PER_MINUTE = 1000
+SAFE_CALLS_PER_MINUTE = 900  # 안정선으로 낮춤
+SAFE_CALLS_PER_SECOND = SAFE_CALLS_PER_MINUTE / 60  # 15.0
+CALL_INTERVAL = 1 / SAFE_CALLS_PER_SECOND  # 초당 호출 간격 (0.066초)
+
+CONCURRENT_WORKERS = 5
+semaphore = asyncio.Semaphore(CONCURRENT_WORKERS)
 
 
 async def download_batch(
@@ -29,17 +35,19 @@ async def download_batch(
         return
 
     try:
-        df = await fetch_bulk_statements(
-            api_key,
-            corp_codes,
-            years,
-            workers=workers,
-            include_corp_names=True,
-            max_calls_per_minute=MAX_CALLS_PER_MINUTE,
-        )
+        async with semaphore:
+            await asyncio.sleep(CALL_INTERVAL)  # 호출 간 시간 간격 확보
+            df = await fetch_bulk_statements(
+                api_key,
+                corp_codes,
+                years,
+                workers=workers,
+                include_corp_names=True,
+                max_calls_per_minute=int(SAFE_CALLS_PER_MINUTE),
+            )
     except Exception as e:
         print(f"[ERROR] API server unresponsive during batch {batch_num}: {e}")
-        raise SystemExit(1)  # 전체 프로그램 종료
+        raise SystemExit(1)
 
     if not df.empty:
         save_to_excel(df, output_path)
@@ -54,7 +62,7 @@ async def main() -> None:
     parser.add_argument("--start", type=int, default=1, help="Start batch number")
     parser.add_argument("--end", type=int, help="End batch number (inclusive)")
     parser.add_argument(
-        "--workers", type=int, default=5, help="Number of concurrent workers"
+        "--workers", type=int, default=CONCURRENT_WORKERS, help="Number of concurrent workers"
     )
     args = parser.parse_args()
 
