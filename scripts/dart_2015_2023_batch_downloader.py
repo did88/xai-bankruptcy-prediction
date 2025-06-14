@@ -13,7 +13,6 @@ from dart_bulk_downloader import (
 
 BATCH_SIZE = 100
 MAX_CALLS_PER_MINUTE = 1000
-DAILY_LIMIT = 20000
 
 
 async def download_batch(
@@ -26,22 +25,26 @@ async def download_batch(
 ) -> None:
     output_path = output_dir / f"dart_statements_2015_2023_batch_{batch_num:02d}.xlsx"
     if output_path.exists():
-        print(f"\u23ed\ufe0f Batch {batch_num} already downloaded. Skipping.")
+        print(f"[SKIP] Batch {batch_num} already downloaded. Skipping.")
         return
 
-    df = await fetch_bulk_statements(
-        api_key,
-        corp_codes,
-        years,
-        workers=workers,
-        include_corp_names=True,
-        max_calls_per_minute=MAX_CALLS_PER_MINUTE,
-    )
+    try:
+        df = await fetch_bulk_statements(
+            api_key,
+            corp_codes,
+            years,
+            workers=workers,
+            include_corp_names=True,
+            max_calls_per_minute=MAX_CALLS_PER_MINUTE,
+        )
+    except Exception as e:
+        print(f"[ERROR] API server unresponsive during batch {batch_num}: {e}")
+        raise SystemExit(1)  # 전체 프로그램 종료
 
     if not df.empty:
         save_to_excel(df, output_path)
     else:
-        print(f"\u26a0\ufe0f Batch {batch_num} returned no data")
+        print(f"[WARN] Batch {batch_num} returned no data")
 
 
 async def main() -> None:
@@ -63,7 +66,7 @@ async def main() -> None:
     output_dir = base_dir / "data" / "batches_2015_2023"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("\ud83d\udcdd Fetching corporation codes...")
+    print("[INFO] Fetching corporation codes...")
     corp_df = await fetch_corp_codes(api_key)
     target_df = filter_kospi_kosdaq_non_financial(corp_df).sort_values("stock_code")
     corp_codes = target_df["corp_code"].tolist()
@@ -77,20 +80,12 @@ async def main() -> None:
     end = min(args.end if args.end else total_batches, total_batches)
 
     years = range(2015, 2024)
-    daily_requests = 0
 
     for batch_num in range(start, end + 1):
         batch_codes = batches[batch_num - 1]
-        est_requests = len(batch_codes) * len(years) * 2
-        if daily_requests + est_requests > DAILY_LIMIT:
-            print(
-                f"\u26d4\ufe0f Daily API limit of {DAILY_LIMIT} requests reached. Stopping."
-            )
-            break
         await download_batch(
             api_key, batch_num, batch_codes, years, output_dir, args.workers
         )
-        daily_requests += est_requests
 
 
 if __name__ == "__main__":
