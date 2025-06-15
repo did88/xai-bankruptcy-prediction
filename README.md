@@ -29,17 +29,18 @@
 ### 4. Filter 1: 부실 기업 예측
 - 학습된 모델로 부실 기업 여부(0/1) 분류
 - 사용자 입력 종목 중 부실 기업 자동 제거
-  
-### 5. 데이터 전처리
-- 결측치 및 이상치 처리
-- 정규화 (StandardScaler)
-- 클래스 불균형 처리 (Resampling)
 
-### 6. 탐색적 데이터 분석 (EDA)
+### 5. 탐색적 데이터 분석 (EDA)
 - Histogram, Box Plot, Violin Plot
 - Q-Q Plot (정규성 검정)
 - 피어슨 상관 분석
 - t-test (정상 vs 부실 변수 유의성 검정)
+
+### 6. 데이터 전처리
+- 분할
+- 결측치 및 이상치 처리
+- 클래스 불균형 처리 (Resampling)
+- 정규화 (StandardScaler)
 
 ### 7. 피처 셀렉션
 - **MDA (Mean Decrease Accuracy)**: Random Forest 기반 중요도
