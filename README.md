@@ -123,6 +123,31 @@ python -m src.dart_bulk_downloader
 
 인터랙티브 예제는 `notebooks/` 디렉터리를 참고하세요.
 
+추가로 `fnlttSinglAcntAll` 엔드포인트를 이용해 연도별 재무상태표와 손익계산서를
+종류별로 저장하는 스크립트가 제공됩니다.
+
+```bash
+python scripts/fetch_financial_statements.py
+```
+
+이 스크립트는 기업 코드 목록을 `data/corp_codes_cache.pkl`에 캐시합니다.
+다음 실행부터는 자동으로 캐시를 사용하여 API 호출 횟수를 줄입니다.
+캐시를 사용하지 않으려면 `--no-cache` 옵션을 추가하세요.
+
+기존 진행 상황을 무시하고 처음부터 다시 받고 싶다면 `--reset` 옵션을 사용할 수 있습니다.
+
+캐시 없이 새로 받고 싶은 경우 `--no-cache` 옵션을 함께 사용하세요.
+
+```bash
+python scripts/fetch_financial_statements.py --reset
+```
+
+실행하면 연결재무제표와 개별재무제표의 재무상태표·손익계산서가
+`data/raw/` 디렉터리에 각각 CSV 파일로 저장됩니다. 진행 상황은
+`tqdm` 프로그레스 바로 표시되며, 중간에 실행을 중단해도
+`data/raw/financial_statements_progress.csv` 파일을 이용해 자동으로
+이어받기를 시도합니다.
+
 ### KRX 52주 베타 계산
 
 `pykrx` 라이브러리를 이용해 특정 종목의 52주 베타를 구하는 스크립트입니다.
