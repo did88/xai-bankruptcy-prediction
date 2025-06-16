@@ -29,17 +29,18 @@
 ### 4. Filter 1: 부실 기업 예측
 - 학습된 모델로 부실 기업 여부(0/1) 분류
 - 사용자 입력 종목 중 부실 기업 자동 제거
-  
-### 5. 데이터 전처리
-- 결측치 및 이상치 처리
-- 정규화 (StandardScaler)
-- 클래스 불균형 처리 (Resampling)
 
-### 6. 탐색적 데이터 분석 (EDA)
+### 5. 탐색적 데이터 분석 (EDA)
 - Histogram, Box Plot, Violin Plot
 - Q-Q Plot (정규성 검정)
 - 피어슨 상관 분석
 - t-test (정상 vs 부실 변수 유의성 검정)
+
+### 6. 데이터 전처리
+- 분할
+- 결측치 및 이상치 처리
+- 클래스 불균형 처리 (Resampling)
+- 정규화 (StandardScaler)
 
 ### 7. 피처 셀렉션
 - **MDA (Mean Decrease Accuracy)**: Random Forest 기반 중요도
@@ -121,6 +122,19 @@ python -m src.dart_bulk_downloader
 6. 최종 데이터에는 기업코드, 기업명, 주식코드, 연도, 재무제표 구분 등 22개 컬럼이 포함됩니다.
 
 인터랙티브 예제는 `notebooks/` 디렉터리를 참고하세요.
+
+추가로 `fnlttSinglAcntAll` 엔드포인트를 이용해 연도별 재무상태표와 손익계산서를
+종류별로 저장하는 스크립트가 제공됩니다.
+
+```bash
+python scripts/fetch_financial_statements.py
+```
+
+실행하면 연결재무제표와 개별재무제표의 재무상태표·손익계산서가
+`data/raw/` 디렉터리에 각각 CSV 파일로 저장됩니다. 진행 상황은
+`tqdm` 프로그레스 바로 표시되며, 중간에 실행을 중단해도
+`data/raw/financial_statements_progress.csv` 파일을 이용해 자동으로
+이어받기를 시도합니다.
 
 ### KRX 52주 베타 계산
 
