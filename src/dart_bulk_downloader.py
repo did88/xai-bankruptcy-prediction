@@ -53,7 +53,10 @@ async def fetch_corp_codes(api_key: str) -> pd.DataFrame:
 
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
         xml_data = zf.read("CORPCODE.xml").decode("utf-8")
-    root = pd.read_xml(xml_data)
+    # ``read_xml`` expects a file-like object when parsing a string literal.
+    # Using the built-in ``etree`` parser avoids the optional ``lxml``
+    # dependency, which may not be available on all platforms.
+    root = pd.read_xml(io.StringIO(xml_data), parser="etree")
     return root
 
 
