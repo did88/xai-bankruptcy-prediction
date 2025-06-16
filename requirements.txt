@@ -9,3 +9,4 @@ aiohttp
 openpyxl
 pykrx
 tqdm
+python-dotenv
