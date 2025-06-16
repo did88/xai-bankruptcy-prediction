@@ -130,6 +130,19 @@ python -m src.dart_bulk_downloader
 python scripts/fetch_financial_statements.py
 ```
 
+기존 진행 상황을 무시하고 처음부터 다시 받고 싶다면 `--reset` 옵션을 사용할 수 있습니다.
+
+```bash
+python scripts/fetch_financial_statements.py --reset
+```
+
+기업 코드 목록은 첫 실행 시 `data/corp_codes_cache.pkl`에 저장되며,
+필요할 경우 `--refresh-corp-codes` 옵션으로 새로 다운로드할 수 있습니다.
+
+```bash
+python scripts/fetch_financial_statements.py --refresh-corp-codes
+```
+
 실행하면 연결재무제표와 개별재무제표의 재무상태표·손익계산서가
 `data/raw/` 디렉터리에 각각 CSV 파일로 저장됩니다. 진행 상황은
 `tqdm` 프로그레스 바로 표시되며, 중간에 실행을 중단해도
