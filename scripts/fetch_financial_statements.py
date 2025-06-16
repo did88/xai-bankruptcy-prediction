@@ -5,6 +5,7 @@ import aiohttp
 import pandas as pd
 from pathlib import Path
 from tqdm.asyncio import tqdm
+import argparse
 
 SRC_PATH = Path(__file__).resolve().parent.parent / "src"
 sys.path.append(str(SRC_PATH))
@@ -34,10 +35,14 @@ def save_csv(df: pd.DataFrame, filename: str) -> None:
     print(f"📁 Saved {len(df):,} rows -> {path}")
 
 
-async def main():
+async def main(reset: bool = False):
     api_key = os.getenv("DART_API_KEY")
     if not api_key:
         raise EnvironmentError("DART_API_KEY 환경변수가 설정되지 않았습니다.")
+
+    if reset and PROGRESS_PATH.exists():
+        PROGRESS_PATH.unlink()
+        print("🗑️ 기존 진행 파일을 삭제했습니다. 새로 수집을 시작합니다.")
 
     print("📥 기업 코드 수집 중...")
     corp_df = await fetch_corp_codes(api_key)
@@ -179,4 +184,13 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(
+        description="Download financial statements from DART"
+    )
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Ignore progress and download from scratch",
+    )
+    args = parser.parse_args()
+    asyncio.run(main(reset=args.reset))
