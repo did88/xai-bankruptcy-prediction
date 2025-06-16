@@ -130,7 +130,13 @@ python -m src.dart_bulk_downloader
 python scripts/fetch_financial_statements.py
 ```
 
+이 스크립트는 기업 코드 목록을 `data/corp_codes_cache.pkl`에 캐시합니다.
+다음 실행부터는 자동으로 캐시를 사용하여 API 호출 횟수를 줄입니다.
+캐시를 사용하지 않으려면 `--no-cache` 옵션을 추가하세요.
+
 기존 진행 상황을 무시하고 처음부터 다시 받고 싶다면 `--reset` 옵션을 사용할 수 있습니다.
+
+캐시 없이 새로 받고 싶은 경우 `--no-cache` 옵션을 함께 사용하세요.
 
 ```bash
 python scripts/fetch_financial_statements.py --reset

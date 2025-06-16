@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 from tqdm.asyncio import tqdm
 import argparse
+import pickle
 
 SRC_PATH = Path(__file__).resolve().parent.parent / "src"
 sys.path.append(str(SRC_PATH))
@@ -24,7 +25,35 @@ PROGRESS_PATH = (
     / "financial_statements_progress.csv"
 )
 PROGRESS_PATH.parent.mkdir(parents=True, exist_ok=True)
+# 기업 코드 캐시 파일 경로
+CACHE_FILE = Path(__file__).resolve().parent.parent / "data" / "corp_codes_cache.pkl"
 BATCH_SIZE = 100
+
+
+async def get_corp_codes_with_cache(api_key: str, force_refresh: bool = False) -> pd.DataFrame:
+    """Load corp codes from cache or download from the API."""
+    CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    if CACHE_FILE.exists() and not force_refresh:
+        try:
+            print("💾 캐시된 기업 코드 로드 중...")
+            with open(CACHE_FILE, "rb") as f:
+                corp_df = pickle.load(f)
+            print(f"✅ 캐시에서 {len(corp_df)}개 기업 로드")
+            return corp_df
+        except Exception as e:
+            print(f"⚠️ 캐시 로드 실패: {e}, API에서 다시 다운로드합니다")
+
+    corp_df = await fetch_corp_codes(api_key)
+
+    try:
+        with open(CACHE_FILE, "wb") as f:
+            pickle.dump(corp_df, f)
+        print(f"💾 기업 코드 목록을 캐시에 저장: {CACHE_FILE}")
+    except Exception as e:
+        print(f"⚠️ 캐시 저장 실패: {e}")
+
+    return corp_df
 
 
 def save_csv(df: pd.DataFrame, filename: str) -> None:
@@ -35,7 +64,7 @@ def save_csv(df: pd.DataFrame, filename: str) -> None:
     print(f"📁 Saved {len(df):,} rows -> {path}")
 
 
-async def main(reset: bool = False):
+async def main(reset: bool = False, use_cache: bool = True):
     api_key = os.getenv("DART_API_KEY")
     if not api_key:
         raise EnvironmentError("DART_API_KEY 환경변수가 설정되지 않았습니다.")
@@ -45,7 +74,7 @@ async def main(reset: bool = False):
         print("🗑️ 기존 진행 파일을 삭제했습니다. 새로 수집을 시작합니다.")
 
     print("📥 기업 코드 수집 중...")
-    corp_df = await fetch_corp_codes(api_key)
+    corp_df = await get_corp_codes_with_cache(api_key, force_refresh=not use_cache)
     target_df = filter_kospi_kosdaq_non_financial(corp_df)
     corp_codes = target_df["corp_code"].unique().tolist()
     corp_name_map = dict(zip(target_df["corp_code"], target_df["corp_name"]))
@@ -192,5 +221,10 @@ if __name__ == "__main__":
         action="store_true",
         help="Ignore progress and download from scratch",
     )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Do not use cached corp codes",
+    )
     args = parser.parse_args()
-    asyncio.run(main(reset=args.reset))
+    asyncio.run(main(reset=args.reset, use_cache=not args.no_cache))
