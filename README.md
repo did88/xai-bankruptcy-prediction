@@ -131,7 +131,10 @@ python scripts/fetch_financial_statements.py
 ```
 
 실행하면 연결재무제표와 개별재무제표의 재무상태표·손익계산서가
-`data/raw/` 디렉터리에 각각 CSV 파일로 저장됩니다.
+`data/raw/` 디렉터리에 각각 CSV 파일로 저장됩니다. 진행 상황은
+`tqdm` 프로그레스 바로 표시되며, 중간에 실행을 중단해도
+`data/raw/financial_statements_progress.csv` 파일을 이용해 자동으로
+이어받기를 시도합니다.
 
 ### KRX 52주 베타 계산
 
