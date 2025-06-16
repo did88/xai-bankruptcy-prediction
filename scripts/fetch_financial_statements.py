@@ -6,6 +6,7 @@ from xml.etree import ElementTree
 
 import pandas as pd
 import requests
+from tqdm import tqdm
 
 # Allow importing utility functions from src/
 SRC_PATH = Path(__file__).resolve().parent.parent / "src"
@@ -46,20 +47,59 @@ def fetch_statement(api_key: str, corp_code: str, year: int, fs_div: str) -> Lis
     return parse_statement_xml(resp.text)
 
 
-def fetch_statements_range(api_key: str, corp_codes: List[str], years: List[int]) -> pd.DataFrame:
-    """Fetch statements for multiple companies and years."""
-    records: List[Dict[str, str]] = []
-    for corp in corp_codes:
-        for year in years:
-            for fs_div in ["CFS", "OFS"]:
-                rows = fetch_statement(api_key, corp, year, fs_div)
-                for row in rows:
-                    row["corp_code"] = corp
-                    row["bsns_year"] = str(year)
-                    row["fs_div"] = fs_div
-                    records.append(row)
-    if records:
-        return pd.DataFrame(records)
+def fetch_statements_range(
+    api_key: str,
+    corp_codes: List[str],
+    years: List[int],
+    progress_file: Path,
+) -> pd.DataFrame:
+    """Fetch statements for multiple companies and years with resume support."""
+
+    progress_file.parent.mkdir(parents=True, exist_ok=True)
+
+    if progress_file.exists():
+        all_df = pd.read_csv(progress_file, dtype=str)
+    else:
+        all_df = pd.DataFrame()
+
+    existing_keys = set()
+    if not all_df.empty:
+        existing_keys = set(
+            zip(all_df["corp_code"], all_df["bsns_year"], all_df["fs_div"])
+        )
+
+    total = len(corp_codes) * len(years) * 2
+    completed = len(existing_keys)
+
+    header_exists = progress_file.exists() and progress_file.stat().st_size > 0
+
+    with tqdm(total=total, desc="Downloading", initial=completed) as pbar:
+        for corp in corp_codes:
+            for year in years:
+                for fs_div in ["CFS", "OFS"]:
+                    key = (corp, str(year), fs_div)
+                    if key in existing_keys:
+                        pbar.update(1)
+                        continue
+                    rows = fetch_statement(api_key, corp, year, fs_div)
+                    if rows:
+                        df = pd.DataFrame(rows)
+                        df["corp_code"] = corp
+                        df["bsns_year"] = str(year)
+                        df["fs_div"] = fs_div
+                        df.to_csv(
+                            progress_file,
+                            mode="a",
+                            header=not header_exists,
+                            index=False,
+                            encoding="utf-8-sig",
+                        )
+                        header_exists = True
+                    existing_keys.add(key)
+                    pbar.update(1)
+
+    if progress_file.exists():
+        return pd.read_csv(progress_file, dtype=str)
     return pd.DataFrame()
 
 
@@ -86,7 +126,8 @@ def main() -> None:
     years = list(range(2015, 2024))
     print(f"Fetching statements for years {years[0]}-{years[-1]} ...")
 
-    statements = fetch_statements_range(api_key, corp_codes, years)
+    progress_path = Path(__file__).resolve().parent.parent / "data" / "raw" / "financial_statements_progress.csv"
+    statements = fetch_statements_range(api_key, corp_codes, years, progress_path)
     if statements.empty:
         print("No data fetched")
         return
