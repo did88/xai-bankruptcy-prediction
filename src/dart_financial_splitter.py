@@ -17,11 +17,18 @@ import pandas as pd
 from dotenv import load_dotenv
 
 # Reuse helpers from dart_bulk_downloader
-from .dart_bulk_downloader import (
-    RateLimiter,
-    fetch_corp_codes,
-    filter_kospi_kosdaq_non_financial,
-)
+try:
+    from .dart_bulk_downloader import (
+        RateLimiter,
+        fetch_corp_codes,
+        filter_kospi_kosdaq_non_financial,
+    )
+except ImportError:  # Fallback for running as a script without a package
+    from dart_bulk_downloader import (
+        RateLimiter,
+        fetch_corp_codes,
+        filter_kospi_kosdaq_non_financial,
+    )
 
 # Load environment variables from project root
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
