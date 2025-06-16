@@ -79,8 +79,17 @@ async def fetch_single_statement(
     }
     await rate_limiter.wait()
     async with session.get(DART_SINGLE_ACCOUNT_URL, params=params) as resp:
+        if resp.status == 429:
+            raise RuntimeError("API daily request limit reached (HTTP 429)")
         resp.raise_for_status()
         data = await resp.json()
+
+    if data.get("status") != "000":
+        msg = data.get("message", "")
+        if any(k in msg for k in ["일일", "사용량", "제한", "초과", "limit", "트래픽"]):
+            raise RuntimeError(f"API daily request limit reached: {msg}")
+        return pd.DataFrame()
+
     return pd.DataFrame(data.get("list", []))
 
 
@@ -96,9 +105,12 @@ async def fetch_bulk_statements(
     sem = asyncio.Semaphore(workers)
 
     async with aiohttp.ClientSession() as session:
+
         async def worker(corp: str, year: int) -> None:
             async with sem:
-                df = await fetch_single_statement(session, rate_limiter, api_key, corp, year)
+                df = await fetch_single_statement(
+                    session, rate_limiter, api_key, corp, year
+                )
                 df.insert(0, "corp_code", corp)
                 df.insert(1, "bsns_year", year)
                 results.append(df)
