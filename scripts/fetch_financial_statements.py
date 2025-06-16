@@ -18,6 +18,7 @@ from dart_bulk_downloader import (
 
 PROGRESS_PATH = Path(__file__).resolve().parent.parent / "data" / "raw" / "financial_statements_progress.csv"
 PROGRESS_PATH.parent.mkdir(parents=True, exist_ok=True)
+BATCH_SIZE = 100
 
 def save_csv(df: pd.DataFrame, filename: str) -> None:
     out_dir = Path(__file__).resolve().parent.parent / "data" / "raw"
@@ -74,7 +75,8 @@ async def main():
         print("🚀 병렬 수집 시작...")
 
     async def worker(session, corp_code, year, fs_div):
-        df = await fetch_single_statement(session, rate_limiter, api_key, corp_code, year)
+        async with sem:
+            df = await fetch_single_statement(session, rate_limiter, api_key, corp_code, year)
         if not df.empty:
             df["corp_name"] = corp_name_map.get(corp_code, "")
             df["corp_code"] = corp_code
@@ -89,16 +91,19 @@ async def main():
 
     if pending_tasks:
         async with aiohttp.ClientSession() as session:
-            tasks = []
-            for corp_code, year, fs_div in pending_tasks:
-                task = asyncio.create_task(worker(session, corp_code, year, fs_div))
-                tasks.append(task)
+            for start in range(0, len(pending_tasks), BATCH_SIZE):
+                batch = pending_tasks[start : start + BATCH_SIZE]
+                tasks = [
+                    asyncio.create_task(worker(session, corp_code, year, fs_div))
+                    for corp_code, year, fs_div in batch
+                ]
 
-            # 진행률 표시: 이미 완료된 작업 수를 초기값으로 설정
-            progress_desc = f"진행률 ({completed_tasks:,}/{total_tasks:,} 완료)"
-            
-            for f in tqdm(asyncio.as_completed(tasks), total=len(tasks), desc=progress_desc):
-                await f
+                progress_desc = f"진행률 ({completed_tasks:,}/{total_tasks:,} 완료)"
+
+                for f in tqdm(asyncio.as_completed(tasks), total=len(tasks), desc=progress_desc):
+                    await f
+
+                completed_tasks += len(batch)
 
     if not collected:
         print("❌ 수집된 데이터가 없습니다.")
