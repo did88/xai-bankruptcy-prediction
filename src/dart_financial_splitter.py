@@ -1,143 +1,72 @@
-"""Download and split DART financial statements.
-
-This script fetches fnlttSinglAcntAll data from the Open DART API for
-KOSPI/KOSDAQ non-financial firms between 2015 and 2023. The results are
-split into consolidated and separate balance sheets and income statements.
-"""
-
-from __future__ import annotations
-
-import asyncio
-import os
-from pathlib import Path
-from typing import Iterable, List
-
-import aiohttp
 import pandas as pd
-from dotenv import load_dotenv
+import asyncio
+import xml.etree.ElementTree as ET
+from pathlib import Path
 
-# Reuse helpers from dart_bulk_downloader
-try:
-    from .dart_bulk_downloader import (
-        RateLimiter,
-        fetch_corp_codes,
-        filter_kospi_kosdaq_non_financial,
-    )
-except ImportError:  # Fallback for running as a script without a package
-    from dart_bulk_downloader import (
-        RateLimiter,
-        fetch_corp_codes,
-        filter_kospi_kosdaq_non_financial,
-    )
+### 📌 1. CORPCODE.xml 파싱 함수 (corp_cls None 문제 해결됨)
+def parse_corp_code_xml(xml_path: str) -> pd.DataFrame:
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
 
-# Load environment variables from project root
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+    data = []
+    for child in root.findall("list"):
+        corp_code = child.findtext("corp_code")
+        corp_name = child.findtext("corp_name")
+        stock_code = child.findtext("stock_code")
+        modify_date = child.findtext("modify_date")
 
-DART_SINGLE_ACNT_ALL_URL = "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json"
+        # 🔧 수정: corp_cls가 None이면 빈 문자열이 아니라 None으로 처리
+        corp_cls_elem = child.find("corp_cls")
+        corp_cls = corp_cls_elem.text.strip() if corp_cls_elem is not None and corp_cls_elem.text else None
 
+        data.append({
+            "corp_code": corp_code,
+            "corp_name": corp_name,
+            "stock_code": stock_code,
+            "modify_date": modify_date,
+            "corp_cls": corp_cls
+        })
 
-async def fetch_single_acnt_all(
-    session: aiohttp.ClientSession,
-    rate_limiter: RateLimiter,
-    api_key: str,
-    corp_code: str,
-    year: int,
-    fs_div: str,
-) -> pd.DataFrame:
-    """Fetch a single corporation's statements for one year."""
-    params = {
-        "crtfc_key": api_key,
-        "corp_code": corp_code,
-        "bsns_year": year,
-        "reprt_code": "11011",
-        "fs_div": fs_div,
-    }
-    await rate_limiter.wait()
-    async with session.get(DART_SINGLE_ACNT_ALL_URL, params=params) as resp:
-        resp.raise_for_status()
-        data = await resp.json()
-
-    if data.get("status") == "000":
-        df = pd.DataFrame(data.get("list", []))
-        if not df.empty:
-            df["corp_code"] = corp_code
-            df["bsns_year"] = year
-            df["fs_div"] = fs_div
-        return df
-    return pd.DataFrame()
+    df = pd.DataFrame(data)
+    return df
 
 
-async def fetch_statements(
-    api_key: str,
-    corp_codes: Iterable[str],
-    years: Iterable[int],
-    workers: int = 5,
-    max_calls_per_minute: int = 600,
-) -> pd.DataFrame:
-    """Download statements in parallel for many companies and years."""
-    rate_limiter = RateLimiter(max_calls_per_minute, 60.0)
-    results: List[pd.DataFrame] = []
-    sem = asyncio.Semaphore(workers)
+### 📌 2. KOSPI/KOSDAQ + 비금융 기업 필터링 함수 (진단 로그 포함)
+def filter_kospi_kosdaq_non_financial(df: pd.DataFrame) -> pd.DataFrame:
+    print("\n📊 [진단] corp_cls 값 분포:")
+    print(df["corp_cls"].value_counts(dropna=False))
 
-    async with aiohttp.ClientSession() as session:
-        async def worker(corp: str, year: int, fs_div: str) -> None:
-            async with sem:
-                df = await fetch_single_acnt_all(
-                    session, rate_limiter, api_key, corp, year, fs_div
-                )
-                if not df.empty:
-                    results.append(df)
+    print("\n📊 [진단] stock_code가 존재하는 기업 수:")
+    print(df["stock_code"].notna().sum())
 
-        tasks = [
-            worker(corp, year, fs_div)
-            for corp in corp_codes
-            for year in years
-            for fs_div in ("CFS", "OFS")
-        ]
-        await asyncio.gather(*tasks)
+    financial_keywords = ["은행", "보험", "금융", "투자", "리츠"]
+    mask_financial = df["corp_name"].str.contains("|".join(financial_keywords), na=False)
+    print("\n📊 [진단] 금융 관련 키워드 포함 기업 수:")
+    print(mask_financial.sum())
 
-    if results:
-        return pd.concat(results, ignore_index=True)
-    return pd.DataFrame()
+    mask_kospi_kosdaq = df["stock_code"].notna() & df["corp_cls"].isin(["Y", "K"])
+    print("\n📊 [진단] KOSPI/KOSDAQ 조건 충족 기업 수:")
+    print(mask_kospi_kosdaq.sum())
+
+    final_df = df[mask_kospi_kosdaq & (~mask_financial)]
+    return final_df
 
 
-def split_and_save(df: pd.DataFrame, output_dir: Path) -> None:
-    """Split DataFrame into four categories and save as CSV."""
-    output_dir.mkdir(parents=True, exist_ok=True)
+### 📌 3. 메인 실행 함수
+async def main():
+    print("📥 기업 코드 XML 파싱 중...")
+    xml_path = Path(__file__).parent / "CORPCODE.xml"
+    corp_df = parse_corp_code_xml(str(xml_path))
+    print(f"✅ 총 기업 수: {len(corp_df)}")
 
-    mapping = {
-        "cfs_bs": ("CFS", "BS", "연결재무제표_재무상태표.csv"),
-        "cfs_is": ("CFS", "IS", "연결재무제표_손익계산서.csv"),
-        "ofs_bs": ("OFS", "BS", "재무제표_재무상태표.csv"),
-        "ofs_is": ("OFS", "IS", "재무제표_손익계산서.csv"),
-    }
+    filtered_df = filter_kospi_kosdaq_non_financial(corp_df)
+    print(f"\n✅ KOSPI/KOSDAQ 비금융 기업 수: {len(filtered_df)}")
 
-    for _, (fs_div, sj_div, filename) in mapping.items():
-        subset = df[(df["fs_div"] == fs_div) & (df["sj_div"] == sj_div)]
-        if not subset.empty:
-            subset.to_csv(output_dir / filename, index=False, encoding="utf-8-sig")
+    # 저장
+    filtered_df.to_csv("filtered_corp_list.csv", index=False, encoding="utf-8-sig")
+    print("📄 필터링 결과 saved to 'filtered_corp_list.csv'")
 
 
-async def main() -> None:
-    api_key = os.getenv("DART_API_KEY")
-    if not api_key:
-        raise EnvironmentError("Set the DART_API_KEY environment variable")
-
-    print("📥 Fetching corporation codes...")
-    corp_df = await fetch_corp_codes(api_key)
-    target_df = filter_kospi_kosdaq_non_financial(corp_df)
-    corp_codes = target_df["corp_code"].tolist()
-    years = range(2015, 2024)
-
-    print(
-        f"🚀 Downloading {len(corp_codes)} corps for years 2015-2023 (may take a while)"
-    )
-    df = await fetch_statements(api_key, corp_codes, years, workers=10)
-
-    output_dir = Path(__file__).resolve().parent.parent / "data" / "raw"
-    split_and_save(df, output_dir)
-    print(f"✅ Saved split statements to {output_dir}")
-
-
+### 📌 4. 실행
 if __name__ == "__main__":
     asyncio.run(main())
