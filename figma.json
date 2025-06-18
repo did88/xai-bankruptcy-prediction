@@ -1,0 +1,196 @@
+{
+  "name": "InvestmentPreferenceApp",
+  "frames": [
+    {
+      "id": "frame_welcome",
+      "name": "Welcome Screen",
+      "type": "FRAME",
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "padding": 40,
+        "direction": "VERTICAL",
+        "spacing": 32,
+        "align": "CENTER"
+      },
+      "children": [
+        {
+          "type": "TEXT",
+          "id": "intro_text",
+          "name": "Intro Text",
+          "text": "투자 성향을 선택하고 관심 기업을 입력하면 추천이 제공됩니다.",
+          "style": {
+            "fontFamily": "Noto Sans KR",
+            "fontSize": 20,
+            "fontWeight": 500,
+            "textAlign": "CENTER"
+          }
+        },
+        {
+          "type": "AUTO_LAYOUT",
+          "id": "risk_buttons",
+          "name": "Risk Selection Buttons",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "spacing": 20,
+            "padding": 0
+          },
+          "children": [
+            {
+              "type": "BUTTON",
+              "id": "btn_high",
+              "name": "High Risk",
+              "text": "고위험",
+              "style": {
+                "fontSize": 16,
+                "fontWeight": "Bold",
+                "padding": [10, 24],
+                "cornerRadius": 16,
+                "fillColor": "#FFFFFF",
+                "borderColor": "#CCCCCC"
+              }
+            },
+            {
+              "type": "BUTTON",
+              "id": "btn_medium",
+              "name": "Medium Risk",
+              "text": "중위험",
+              "style": {
+                "fontSize": 16,
+                "fontWeight": "Bold",
+                "padding": [10, 24],
+                "cornerRadius": 16,
+                "fillColor": "#FFFFFF",
+                "borderColor": "#CCCCCC"
+              }
+            },
+            {
+              "type": "BUTTON",
+              "id": "btn_low",
+              "name": "Low Risk",
+              "text": "저위험",
+              "style": {
+                "fontSize": 16,
+                "fontWeight": "Bold",
+                "padding": [10, 24],
+                "cornerRadius": 16,
+                "fillColor": "#FFFFFF",
+                "borderColor": "#CCCCCC"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "frame_chat",
+      "name": "Chat Screen",
+      "type": "FRAME",
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "padding": 24,
+        "direction": "VERTICAL",
+        "spacing": 16,
+        "align": "STRETCH"
+      },
+      "children": [
+        {
+          "type": "CHAT_BUBBLE",
+          "id": "bot_prompt",
+          "name": "Bot Prompt",
+          "text": "관심 있는 기업들을 입력해 주세요. (예: 삼성전자, 테슬라)",
+          "style": {
+            "fillColor": "#F4F4F4",
+            "cornerRadius": 12,
+            "padding": [12, 16],
+            "fontSize": 16,
+            "fontFamily": "Noto Sans KR"
+          }
+        },
+        {
+          "type": "CHAT_INPUT",
+          "id": "user_input",
+          "name": "User Input",
+          "placeholder": "예: 삼성전자, 네이버",
+          "style": {
+            "cornerRadius": 24,
+            "borderColor": "#CCCCCC",
+            "padding": [12, 16],
+            "fontSize": 16
+          },
+          "icons": ["mic", "send"]
+        }
+      ]
+    },
+    {
+      "id": "frame_result",
+      "name": "Result Screen",
+      "type": "FRAME",
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "padding": 24,
+        "direction": "VERTICAL",
+        "spacing": 24,
+        "align": "STRETCH"
+      },
+      "children": [
+        {
+          "type": "CHAT_BUBBLE",
+          "id": "result_bubble",
+          "name": "Result Bubble",
+          "text": "- 삼성전자: 안정적인 배당과 반도체 성장성 고려\n- 테슬라: 변동성 있지만 장기 성장 기대",
+          "style": {
+            "fillColor": "#FFFFFF",
+            "shadow": "0 1px 4px rgba(0,0,0,0.05)",
+            "cornerRadius": 12,
+            "padding": [16, 20],
+            "fontSize": 16,
+            "fontFamily": "Noto Sans KR",
+            "textAlign": "LEFT"
+          }
+        },
+        {
+          "type": "AUTO_LAYOUT",
+          "id": "result_buttons",
+          "name": "Result Options",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "spacing": 16
+          },
+          "children": [
+            {
+              "type": "BUTTON",
+              "id": "btn_retry",
+              "name": "다시 선택하기",
+              "text": "다시 선택하기",
+              "style": {
+                "fontSize": 14,
+                "fontWeight": "Medium",
+                "padding": [10, 20],
+                "cornerRadius": 14,
+                "fillColor": "#FFFFFF",
+                "borderColor": "#CCCCCC"
+              }
+            },
+            {
+              "type": "BUTTON",
+              "id": "btn_new",
+              "name": "새로 추천받기",
+              "text": "새로 추천받기",
+              "style": {
+                "fontSize": 14,
+                "fontWeight": "Medium",
+                "padding": [10, 20],
+                "cornerRadius": 14,
+                "fillColor": "#FFFFFF",
+                "borderColor": "#CCCCCC"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
